@@ -1,13 +1,5 @@
 package assignment2;
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.RenderingHints;
-import java.awt.Shape;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -17,15 +9,17 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 
 public class ShapeDrawer extends JComponent {
     private ArrayList<Shape> shapes = new ArrayList<>();
     private Point pointStart, pointEnd;
     private Color colour = Color.BLACK;
-    private String mode = "OVAL";
+    private Mode mode;
 
     public ShapeDrawer() {
+
+        setPreferredSize(new Dimension(500, 500));
+
         this.addMouseListener(new MouseAdapter() {
 
             public void mousePressed(MouseEvent e) {
@@ -37,23 +31,23 @@ public class ShapeDrawer extends JComponent {
             public void mouseReleased(MouseEvent e) {
                 Shape shape = null;
 
-                if (mode == "LINE") {
+                if (mode == Mode.LINE) {
                     shape = drawLine(pointStart.x, pointStart.y, e.getX(), e.getY());
                 }
                     
-                else if (mode == "CIRCLE") {
+                else if (mode == Mode.CIRCLE) {
                     shape = drawCircle(pointStart.x, pointStart.y, e.getX(), e.getY());
                 }
 
-                else if (mode == "OVAL") {
+                else if (mode == Mode.OVAL) {
                     shape = drawOval(pointStart.x, pointStart.y, e.getX(), e.getY());
                 }
 
-                else if (mode == "RECTANGLE") {
+                else if (mode == Mode.RECTANGLE) {
                     shape = drawRectangle(pointStart.x, pointStart.y, e.getX(), e.getY());
                 }
 
-                else if (mode == "SQUARE") {
+                else if (mode == Mode.SQUARE) {
                     shape = drawSquare(pointStart.x, pointStart.y, e.getX(), e.getY());
                 }
                     
@@ -104,23 +98,23 @@ public class ShapeDrawer extends JComponent {
         if (pointStart != null && pointEnd != null) {
             g2.setPaint(Color.LIGHT_GRAY);
             Shape shape = null;
-            if (mode == "LINE") {
+            if (mode == Mode.LINE) {
                 shape = drawLine(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
             }
 
-            else if (mode == "CIRCLE") {
+            else if (mode == Mode.CIRCLE) {
                 shape = drawCircle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
             }
 
-            else if (mode == "OVAL") {
+            else if (mode == Mode.OVAL) {
                 shape = drawOval(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
             }
 
-            else if (mode == "RECTANGLE") {
+            else if (mode == Mode.RECTANGLE) {
                 shape = drawRectangle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
             }
 
-            else if (mode == "SQUARE") {
+            else if (mode == Mode.SQUARE) {
                 shape = drawSquare(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
             }
 
@@ -148,8 +142,8 @@ public class ShapeDrawer extends JComponent {
         return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(x1 - x2));
     }
 
-    // Set draw mode (type of shape to draw).
-    public void setMode(String mode) {
+    // Set type of shape to draw.
+    public void setMode(Mode mode) {
         this.mode = mode;
     }
 
@@ -158,9 +152,14 @@ public class ShapeDrawer extends JComponent {
         this.colour = colour;
     }
 
-    // Get all created shapes.
+    // Get all drawn shapes.
     public ArrayList<Shape> getShapes() {
         return this.shapes;
+    }
+
+    // Clear all shapes.
+    public void clear() {
+        this.shapes = new ArrayList<>();
     }
 }
 
