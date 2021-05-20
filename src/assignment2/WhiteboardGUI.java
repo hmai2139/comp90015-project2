@@ -34,20 +34,22 @@ public class WhiteboardGUI extends JFrame {
     }
 
     public WhiteboardGUI() {
-        frame = new JFrame("User interface");
         shapeDrawer = new ShapeDrawer();
+        frame = new JFrame("User interface");
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setMinimumSize(new Dimension(700, 700));
-        frame.setLocation(10,10);
+        frame.setLocation(screenSize.width/2, screenSize.height/10);
 
-        this.setSize(500, 500);
         this.setTitle("Whiteboard");
-        this.add(shapeDrawer);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setMinimumSize(new Dimension(700, 700));
+        this.setLocation(screenSize.width/20, screenSize.height/10);
+        this.add(shapeDrawer);
         this.setVisible(true);
 
-        System.out.println(shapeDrawer.getSize());
 
         lineButton.addActionListener(new ActionListener() {
             @Override
