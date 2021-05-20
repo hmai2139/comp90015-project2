@@ -21,7 +21,7 @@ public class WhiteboardGUI extends JFrame {
     private JButton textButton;
     private JButton squareButton;
     private JButton clearButton;
-    private ShapeDrawer shapeDrawer1;
+    private ShapeDrawer shapeDrawer;
 
     //private ShapeDrawer shapeDrawer;
     // GUI frame.
@@ -30,20 +30,20 @@ public class WhiteboardGUI extends JFrame {
     public static void main(String args[]) {
         WhiteboardGUI whiteboardGUI = new WhiteboardGUI();
         whiteboardGUI.getFrame().setContentPane(whiteboardGUI.panelMain);
-        //whiteboardGUI.getFrame().pack();
         whiteboardGUI.getFrame().setVisible(true);
     }
 
     public WhiteboardGUI() {
-        frame = new JFrame("Whiteboard");
-        ShapeDrawer shapeDrawer = new ShapeDrawer();
+        frame = new JFrame("User interface");
+        shapeDrawer = new ShapeDrawer();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
-        frame.setSize(700, 700);
-        frame.setLocationRelativeTo(null);
+        frame.setMinimumSize(new Dimension(700, 700));
+        frame.setLocation(10,10);
 
         this.setSize(500, 500);
-        this.add(shapeDrawer, BorderLayout.CENTER);
+        this.setTitle("Whiteboard");
+        this.add(shapeDrawer);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
 

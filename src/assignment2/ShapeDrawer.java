@@ -14,7 +14,7 @@ public class ShapeDrawer extends JComponent {
     private ArrayList<Shape> shapes = new ArrayList<>();
     private Point pointStart, pointEnd;
     private Color colour = Color.BLACK;
-    private Mode mode;
+    public Mode mode = Mode.LINE;
 
     public ShapeDrawer() {
 
@@ -97,8 +97,6 @@ public class ShapeDrawer extends JComponent {
         }
 
         if (pointStart != null && pointEnd != null) {
-            g.drawString("abc", pointStart.x, pointStart.y);
-
 
             g2.setPaint(Color.LIGHT_GRAY);
             Shape shape = null;
@@ -151,6 +149,11 @@ public class ShapeDrawer extends JComponent {
         this.mode = mode;
     }
 
+    // Set type of shape to draw.
+    public Mode getMode() {
+        return this.mode;
+    }
+
     // Set shape colour.
     public void setColor(Color colour) {
         this.colour = colour;
@@ -164,6 +167,7 @@ public class ShapeDrawer extends JComponent {
     // Clear all shapes.
     public void clear() {
         this.shapes = new ArrayList<>();
+        repaint();
     }
 }
 
