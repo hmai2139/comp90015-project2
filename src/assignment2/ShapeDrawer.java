@@ -8,7 +8,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
-import javax.swing.JComponent;
+import javax.swing.*;
 
 public class ShapeDrawer extends JComponent {
     private ArrayList<Shape> shapes = new ArrayList<>();
@@ -18,7 +18,7 @@ public class ShapeDrawer extends JComponent {
 
     public ShapeDrawer() {
 
-        setPreferredSize(new Dimension(500, 500));
+        //setPreferredSize(new Dimension(500, 500));
 
         this.addMouseListener(new MouseAdapter() {
 
@@ -56,6 +56,7 @@ public class ShapeDrawer extends JComponent {
                 pointEnd = null;
                 repaint();
             }
+
         });
 
         this.addMouseMotionListener(new MouseMotionAdapter() {
@@ -96,6 +97,9 @@ public class ShapeDrawer extends JComponent {
         }
 
         if (pointStart != null && pointEnd != null) {
+            g.drawString("abc", pointStart.x, pointStart.y);
+
+
             g2.setPaint(Color.LIGHT_GRAY);
             Shape shape = null;
             if (mode == Mode.LINE) {

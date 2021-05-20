@@ -1,11 +1,13 @@
 package assignment2;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.concurrent.Flow;
 
 public class WhiteboardGUI extends JFrame {
 
@@ -19,21 +21,22 @@ public class WhiteboardGUI extends JFrame {
     private JButton textButton;
     private JButton squareButton;
     private JButton clearButton;
+    private ShapeDrawer shapeDrawer1;
 
-    private ShapeDrawer shapeDrawer;
+    //private ShapeDrawer shapeDrawer;
     // GUI frame.
     private final JFrame frame;
 
     public static void main(String args[]) {
         WhiteboardGUI whiteboardGUI = new WhiteboardGUI();
         whiteboardGUI.getFrame().setContentPane(whiteboardGUI.panelMain);
+        //whiteboardGUI.getFrame().pack();
         whiteboardGUI.getFrame().setVisible(true);
     }
 
     public WhiteboardGUI() {
         frame = new JFrame("Whiteboard");
-        shapeDrawer = new ShapeDrawer();
-        //frame.add(shapeDrawer);
+        ShapeDrawer shapeDrawer = new ShapeDrawer();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setSize(700, 700);
@@ -41,7 +44,7 @@ public class WhiteboardGUI extends JFrame {
 
         this.setSize(500, 500);
         this.add(shapeDrawer, BorderLayout.CENTER);
-        //this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
 
         System.out.println(shapeDrawer.getSize());
