@@ -18,16 +18,16 @@ public class WhiteboardGUI extends JFrame {
     private JPanel stylingPanel;
     private JButton colourButton;
     private JButton colourIndicator;
+    private JButton redoShapeButton;
     private final Whiteboard whiteboard;
 
-    //private ShapeDrawer shapeDrawer;
     // GUI frame.
     private final JFrame frame;
 
     public static void main(String[] args) {
         WhiteboardGUI whiteboardGUI = new WhiteboardGUI();
-        whiteboardGUI.getFrame().setContentPane(whiteboardGUI.panelMain);
-        whiteboardGUI.getFrame().setVisible(true);
+        whiteboardGUI.frame().setContentPane(whiteboardGUI.panelMain);
+        whiteboardGUI.frame().setVisible(true);
     }
 
     public WhiteboardGUI() {
@@ -55,31 +55,30 @@ public class WhiteboardGUI extends JFrame {
 
         // Select an insert option.
         insertMenu.addActionListener(e -> {
-            JComboBox comboBox = (JComboBox)e.getSource();
-            Mode mode = Mode.valueOf((String) comboBox.getSelectedItem());
+            JComboBox insertMenu = (JComboBox) e.getSource();
+            Mode mode = Mode.valueOf((String) insertMenu.getSelectedItem());
             whiteboard.setMode(mode);
         });
 
         // Select a colour and update current colour indicator.
-        colourButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                Color colour = Color.BLACK;
-                colour = JColorChooser.showDialog(frame, "Select a colour", colour);
-                whiteboard.setColour(colour);
-                colourIndicator.setBackground(colour);
-            }
+        colourButton.addActionListener(e -> {
+            Color colour = Color.BLACK;
+            colour = JColorChooser.showDialog(frame, "Select a colour", colour);
+            whiteboard.setColour(colour);
+            colourIndicator.setBackground(colour);
         });
 
-        // Clear all drawn shapes from whiteboard.
-        clearShapeButton.addActionListener(e -> whiteboard.clear());
-
         // Clear the last drawn shape from whiteboard.
-        undoShapeButton.addActionListener(e -> whiteboard.undo());
+        undoShapeButton.addActionListener( e -> whiteboard.undo() );
 
+        // Redrawn the last undone shape on whiteboard.
+        redoShapeButton.addActionListener( e -> whiteboard.redo() );
+
+        // Clear all drawn shapes from whiteboard.
+        clearShapeButton.addActionListener( e -> whiteboard.clear() );
     }
 
-    public JFrame getFrame() {
+    public JFrame frame() {
         return this.frame;
     }
 }

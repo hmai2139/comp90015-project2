@@ -12,6 +12,7 @@ import javax.swing.*;
 
 public class Whiteboard extends JComponent {
     private ArrayList<ColouredShape> shapes = new ArrayList<>();
+    private ArrayList<ColouredShape> undoneShapes = new ArrayList<>();
     private Point pointStart, pointEnd;
     private Color colour = Color.BLACK;
     private Mode mode = Mode.LINE;
@@ -178,13 +179,30 @@ public class Whiteboard extends JComponent {
     // Clear last drawn shape.
     public void undo() {
         if (this.shapes.size() >= 1) {
+            this.undoneShapes.add(this.shapes.get(this.shapes.size() - 1));
             this.shapes.remove(this.shapes.size() - 1);
+            repaint();
+        }
+    }
+
+    // Redraw last undone shape.
+    public void redo() {
+        if (this.undoneShapes.size() >= 1) {
+            if (this.shapes.size() == 0) {
+                this.shapes = this.undoneShapes;
+                this.undoneShapes = new ArrayList<>();
+            }
+            else {
+                this.shapes.add(this.undoneShapes.get(this.undoneShapes.size() - 1));
+                this.undoneShapes.remove(this.undoneShapes.size() - 1);
+            }
             repaint();
         }
     }
 
     // Clear all shapes.
     public void clear() {
+        this.undoneShapes = this.shapes;
         this.shapes = new ArrayList<>();
         repaint();
     }
