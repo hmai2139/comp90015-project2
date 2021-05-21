@@ -2,11 +2,11 @@ package assignment2;
 
 import java.awt.*;
 
-public class ColouredShape {
+public class StyledShape {
     private Shape shape;
     private Color colour;
 
-    public ColouredShape(Shape shape, Color colour) {
+    public StyledShape(Shape shape, Color colour) {
         this.shape = shape;
         this.colour = colour;
     }

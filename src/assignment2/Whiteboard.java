@@ -11,8 +11,7 @@ import java.util.ArrayList;
 import javax.swing.*;
 
 public class Whiteboard extends JComponent {
-    private ArrayList<ColouredShape> shapes = new ArrayList<>();
-    private ArrayList<ColouredShape> undoneShapes = new ArrayList<>();
+    private ArrayList<StyledShape> shapes = new ArrayList<>();
     private Point pointStart, pointEnd;
     private Color colour = Color.BLACK;
     private Mode mode = Mode.LINE;
@@ -25,46 +24,43 @@ public class Whiteboard extends JComponent {
         this.addMouseListener(new MouseAdapter() {
 
             public void mousePressed(MouseEvent e) {
-                pointStart = new Point(e.getX(), e.getY());
-                pointEnd = pointStart;
-                repaint();
+                if ( SwingUtilities.isLeftMouseButton(e) ) {
+                    pointStart = new Point(e.getX(), e.getY());
+                    pointEnd = pointStart;
+                    repaint();
+                }
             }
 
             public void mouseReleased(MouseEvent e) {
-                Shape shape = null;
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    Shape shape = null;
 
-                if (mode == Mode.LINE) {
-                    shape = drawLine(pointStart.x, pointStart.y, e.getX(), e.getY());
-                }
-                    
-                else if (mode == Mode.CIRCLE) {
-                    shape = drawCircle(pointStart.x, pointStart.y, e.getX(), e.getY());
-                }
+                    if (mode == Mode.LINE) {
+                        shape = drawLine(pointStart.x, pointStart.y, e.getX(), e.getY());
+                    } else if (mode == Mode.CIRCLE) {
+                        shape = drawCircle(pointStart.x, pointStart.y, e.getX(), e.getY());
+                    } else if (mode == Mode.OVAL) {
+                        shape = drawOval(pointStart.x, pointStart.y, e.getX(), e.getY());
+                    } else if (mode == Mode.RECTANGLE) {
+                        shape = drawRectangle(pointStart.x, pointStart.y, e.getX(), e.getY());
+                    } else if (mode == Mode.SQUARE) {
+                        shape = drawSquare(pointStart.x, pointStart.y, e.getX(), e.getY());
+                    }
 
-                else if (mode == Mode.OVAL) {
-                    shape = drawOval(pointStart.x, pointStart.y, e.getX(), e.getY());
+                    shapes.add(new StyledShape(shape, colour));
+                    pointStart = null;
+                    pointEnd = null;
+                    repaint();
                 }
-
-                else if (mode == Mode.RECTANGLE) {
-                    shape = drawRectangle(pointStart.x, pointStart.y, e.getX(), e.getY());
-                }
-
-                else if (mode == Mode.SQUARE) {
-                    shape = drawSquare(pointStart.x, pointStart.y, e.getX(), e.getY());
-                }
-                    
-                shapes.add(new ColouredShape(shape, colour));
-                pointStart = null;
-                pointEnd = null;
-                repaint();
             }
-
         });
 
         this.addMouseMotionListener(new MouseMotionAdapter() {
-            public void mouseDragged(MouseEvent e) {
-                pointEnd = new Point(e.getX(), e.getY());
-                repaint();
+            public void mouseDragged (MouseEvent e) {
+                if ( SwingUtilities.isLeftMouseButton(e) ) {
+                    pointEnd = new Point(e.getX(), e.getY());
+                    repaint();
+                }
             }
         });
     }
@@ -78,7 +74,7 @@ public class Whiteboard extends JComponent {
         g2.setStroke(new BasicStroke(2));
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.50f));
 
-        for (ColouredShape shape : shapes) {
+        for (StyledShape shape : shapes) {
             g2.setPaint(shape.colour());
             g2.draw(shape.shape());
             //g2.setPaint(this.colour);
@@ -172,37 +168,12 @@ public class Whiteboard extends JComponent {
     }
 
     // Get all drawn shapes.
-    public ArrayList<ColouredShape> getShapes() {
+    public ArrayList<StyledShape> getShapes() {
         return this.shapes;
-    }
-
-    // Clear last drawn shape.
-    public void undo() {
-        if (this.shapes.size() >= 1) {
-            this.undoneShapes.add(this.shapes.get(this.shapes.size() - 1));
-            this.shapes.remove(this.shapes.size() - 1);
-            repaint();
-        }
-    }
-
-    // Redraw last undone shape.
-    public void redo() {
-        if (this.undoneShapes.size() >= 1) {
-            if (this.shapes.size() == 0) {
-                this.shapes = this.undoneShapes;
-                this.undoneShapes = new ArrayList<>();
-            }
-            else {
-                this.shapes.add(this.undoneShapes.get(this.undoneShapes.size() - 1));
-                this.undoneShapes.remove(this.undoneShapes.size() - 1);
-            }
-            repaint();
-        }
     }
 
     // Clear all shapes.
     public void clear() {
-        this.undoneShapes = this.shapes;
         this.shapes = new ArrayList<>();
         repaint();
     }

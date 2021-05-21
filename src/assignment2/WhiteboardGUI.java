@@ -68,12 +68,6 @@ public class WhiteboardGUI extends JFrame {
             colourIndicator.setBackground(colour);
         });
 
-        // Clear the last drawn shape from whiteboard.
-        undoShapeButton.addActionListener( e -> whiteboard.undo() );
-
-        // Redrawn the last undone shape on whiteboard.
-        redoShapeButton.addActionListener( e -> whiteboard.redo() );
-
         // Clear all drawn shapes from whiteboard.
         clearShapeButton.addActionListener( e -> whiteboard.clear() );
     }
