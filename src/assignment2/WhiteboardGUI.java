@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class WhiteboardGUI extends JFrame {
 
@@ -13,12 +15,11 @@ public class WhiteboardGUI extends JFrame {
     private JTextPane logPanel;
     private JPanel controlPanel;
     private JComboBox insertMenu;
-    private JButton undoShapeButton;
     private JButton clearShapeButton;
     private JPanel stylingPanel;
     private JButton colourButton;
     private JButton colourIndicator;
-    private JButton redoShapeButton;
+    private JButton switchBackgroundButton;
     private final Whiteboard whiteboard;
 
     // GUI frame.
@@ -36,6 +37,7 @@ public class WhiteboardGUI extends JFrame {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         whiteboard = new Whiteboard();
+        whiteboard.setBackground(Color.WHITE);
 
         // Drawing area's initialisation and customisations.
         this.setTitle("Whiteboard");
@@ -52,6 +54,26 @@ public class WhiteboardGUI extends JFrame {
         frame.setMinimumSize(new Dimension(screenSize.width/3, screenSize.width/2));
         frame.setLocation(this.getWidth() + this.getX(), screenSize.height/20);
         colourIndicator.setBackground(whiteboard.colour());
+
+        // Behaviours when user clicks on whiteboard.
+        whiteboard.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                if (whiteboard.mode() != Mode.TEXT) {
+                    return;
+                }
+                // Focus on the clicked text field.
+                if (e.getClickCount() == 1) {
+                    whiteboard.requestFocusInWindow();
+                }
+                // Create a new text field when user double-clicks on whiteboard.
+                if (e.getClickCount() == 2) {
+                    TextField textField = new TextField(whiteboard);
+                    textField.setLocation(e.getPoint());
+                    add(textField);
+                    textField.requestFocusInWindow();
+                }
+            }
+        });
 
         // Select an insert option.
         insertMenu.addActionListener(e -> {
@@ -70,8 +92,15 @@ public class WhiteboardGUI extends JFrame {
 
         // Clear all drawn shapes from whiteboard.
         clearShapeButton.addActionListener( e -> whiteboard.clear() );
+
+        // Switch background.
+        switchBackgroundButton.addActionListener( e -> {
+            whiteboard.switchGrid();
+        });
+
     }
 
+    // Get Whiteboard GUI's frame.
     public JFrame frame() {
         return this.frame;
     }
