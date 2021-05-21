@@ -1,97 +1,82 @@
 package assignment2;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.util.concurrent.Flow;
 
 public class WhiteboardGUI extends JFrame {
 
     private JPanel panelMain;
-    private JPanel drawingPanel;
-    private JPanel buttonPanel;
-    private JButton ovalButton;
-    private JButton circleButton;
-    private JButton lineButton;
-    private JButton rectangleButton;
-    private JButton textButton;
-    private JButton squareButton;
-    private JButton clearButton;
-    private ShapeDrawer shapeDrawer;
+    private JPanel insertPanel;
+    private JScrollPane logScrollPanel;
+    private JTextPane logPanel;
+    private JPanel controlPanel;
+    private JComboBox insertMenu;
+    private JButton undoShapeButton;
+    private JButton clearShapeButton;
+    private JPanel stylingPanel;
+    private JButton colourButton;
+    private JButton colourIndicator;
+    private final Whiteboard whiteboard;
 
     //private ShapeDrawer shapeDrawer;
     // GUI frame.
     private final JFrame frame;
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         WhiteboardGUI whiteboardGUI = new WhiteboardGUI();
         whiteboardGUI.getFrame().setContentPane(whiteboardGUI.panelMain);
         whiteboardGUI.getFrame().setVisible(true);
     }
 
     public WhiteboardGUI() {
-        shapeDrawer = new ShapeDrawer();
-        frame = new JFrame("User interface");
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
-        frame.setMinimumSize(new Dimension(700, 700));
-        frame.setLocation(screenSize.width/2, screenSize.height/10);
 
+        // Get screen size.
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+        whiteboard = new Whiteboard();
+
+        // Drawing area's initialisation and customisations.
         this.setTitle("Whiteboard");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setMinimumSize(new Dimension(700, 700));
-        this.setLocation(screenSize.width/20, screenSize.height/10);
-        this.add(shapeDrawer);
+        this.setMinimumSize(new Dimension(screenSize.width/2, screenSize.width/2));
+        this.setLocation(screenSize.width/20, screenSize.height/20);
+        this.add(whiteboard);
         this.setVisible(true);
 
+        // User interface's initialisation and customisations.
+        frame = new JFrame("User interface");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.pack();
+        frame.setMinimumSize(new Dimension(screenSize.width/3, screenSize.width/2));
+        frame.setLocation(this.getWidth() + this.getX(), screenSize.height/20);
+        colourIndicator.setBackground(whiteboard.colour());
 
-        lineButton.addActionListener(new ActionListener() {
+        // Select an insert option.
+        insertMenu.addActionListener(e -> {
+            JComboBox comboBox = (JComboBox)e.getSource();
+            Mode mode = Mode.valueOf((String) comboBox.getSelectedItem());
+            whiteboard.setMode(mode);
+        });
+
+        // Select a colour and update current colour indicator.
+        colourButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                shapeDrawer.setMode(Mode.LINE);
+                Color colour = Color.BLACK;
+                colour = JColorChooser.showDialog(frame, "Select a colour", colour);
+                whiteboard.setColour(colour);
+                colourIndicator.setBackground(colour);
             }
         });
 
-        circleButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                shapeDrawer.setMode(Mode.CIRCLE);
-            }
-        });
+        // Clear all drawn shapes from whiteboard.
+        clearShapeButton.addActionListener(e -> whiteboard.clear());
 
-        ovalButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                shapeDrawer.setMode(Mode.OVAL);
-            }
-        });
+        // Clear the last drawn shape from whiteboard.
+        undoShapeButton.addActionListener(e -> whiteboard.undo());
 
-        rectangleButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                shapeDrawer.setMode(Mode.RECTANGLE);
-            }
-        });
-
-        squareButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                shapeDrawer.setMode(Mode.SQUARE);
-            }
-        });
-
-        clearButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                shapeDrawer.clear();
-            }
-        });
     }
 
     public JFrame getFrame() {
