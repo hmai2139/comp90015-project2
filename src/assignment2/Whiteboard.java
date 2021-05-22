@@ -33,6 +33,12 @@ public class Whiteboard extends JComponent {
     // Default whiteboard background.
     private Boolean grid = false;
 
+    // Whiteboard manager.
+    private String manager;
+
+    // Whiteboard users.
+    private ArrayList<String> users = new ArrayList<>();
+
     public Whiteboard() {
 
         // Get start location of user's cursor.
