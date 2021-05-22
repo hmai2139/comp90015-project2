@@ -7,40 +7,39 @@ import java.awt.event.*;
 public class WhiteboardGUI extends JFrame {
 
     private JPanel panelMain;
-    private JPanel insertPanel;
     private JScrollPane logScrollPanel;
     private JTextPane logPanel;
     private JComboBox insertMenu;
-    private JButton clearShapeButton;
+    private JButton newButton;
     private JPanel stylingPanel;
     private JButton colourButton;
     private JButton switchBackgroundButton;
     private JButton leaveButton;
-    private JTextField textField1;
+    private JTextField chatField;
     private JLabel userSelection;
-    private JMenuBar menuBar1;
-    private JPopupMenu popupMenu1;
+    private JPanel whiteboardInteractionPanel;
+    private JButton openButton;
+    private JButton saveButton;
+    private JButton saveAsButton;
+    private JButton closeButton;
     private Whiteboard whiteboard;
 
     // GUI main frame.
     private final JFrame frame;
 
     public static void main(String[] args) {
-        WhiteboardGUI whiteboardGUI = new WhiteboardGUI();
-        whiteboardGUI.frame().setContentPane(whiteboardGUI.panelMain);
-        whiteboardGUI.frame().setVisible(true);
+        new WhiteboardGUI("hoang");
     }
 
-    public WhiteboardGUI() {
-
+    public WhiteboardGUI(String manager) {
         // Get screen size.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         // Initialise whiteboard.
         whiteboard = new Whiteboard();
-        setTitle("Whiteboard");
+        setTitle(manager + "'s whiteboard");
 
-        // Customise whiteboard.
+        // Customise drawing area of whiteboard.
         whiteboard.setBackground(Color.WHITE);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
@@ -49,15 +48,24 @@ public class WhiteboardGUI extends JFrame {
         colourButton.setBackground(whiteboard.colour());
         this.setVisible(true);
 
-        // User interface's initialisation and customisations.
+        // Whiteboard GUI's initialisation and customisations.
         frame = new JFrame("User interface");
+        frame.setContentPane(panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.pack();
+
+        //frame.add(menuBar);
         frame.setMinimumSize(new Dimension(screenSize.width / 2,(int) (screenSize.height*0.8)));
         frame.setLocation(this.getX() + this.getWidth(), screenSize.height/20);
+        frame.pack();
+        frame.setVisible(true);
 
         // Leave the whiteboard.
         leaveButton.addActionListener(e -> {
+            System.exit(0);
+        });
+
+        // Close the whiteboard.
+        closeButton.addActionListener(e -> {
             System.exit(0);
         });
 
@@ -99,7 +107,7 @@ public class WhiteboardGUI extends JFrame {
         });
 
         // Clear all drawn shapes from whiteboard.
-        clearShapeButton.addActionListener(e -> whiteboard.clear());
+        newButton.addActionListener(e -> whiteboard.clear());
 
         // Switch background.
         switchBackgroundButton.addActionListener(e -> {
