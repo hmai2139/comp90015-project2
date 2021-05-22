@@ -18,7 +18,6 @@ public class WhiteboardGUI extends JFrame {
     private JButton clearShapeButton;
     private JPanel stylingPanel;
     private JButton colourButton;
-    private JButton colourIndicator;
     private JButton switchBackgroundButton;
     private final Whiteboard whiteboard;
 
@@ -53,7 +52,7 @@ public class WhiteboardGUI extends JFrame {
         frame.pack();
         frame.setMinimumSize(new Dimension(screenSize.width/3, screenSize.width/2));
         frame.setLocation(this.getWidth() + this.getX(), screenSize.height/20);
-        colourIndicator.setBackground(whiteboard.colour());
+        colourButton.setBackground(whiteboard.colour());
 
         // Behaviours when user clicks on whiteboard.
         whiteboard.addMouseListener(new MouseAdapter() {
@@ -84,10 +83,12 @@ public class WhiteboardGUI extends JFrame {
 
         // Select a colour and update current colour indicator.
         colourButton.addActionListener(e -> {
-            Color colour = Color.BLACK;
+            Color colour = whiteboard.colour();
             colour = JColorChooser.showDialog(frame, "Select a colour", colour);
-            whiteboard.setColour(colour);
-            colourIndicator.setBackground(colour);
+            if (colour != null) {
+                whiteboard.setColour(colour);
+                colourButton.setBackground(colour);
+            }
         });
 
         // Clear all drawn shapes from whiteboard.

@@ -95,6 +95,8 @@ public class Whiteboard extends JComponent {
     // Drawing logic.
     public void paint(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
+
+        // Anti-aliasing to produce cleaner drawing.
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Whether to draw grid based on user's instruction.

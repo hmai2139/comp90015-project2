@@ -22,12 +22,13 @@ public class TextField extends JTextField
     //  Implement ActionListener
     public void actionPerformed(ActionEvent e) { setEditable(false); }
 
-    //  When user moves away from this field.
+    //  When user finishes typing, delete this field from whiteboard and draw the text.
     public void focusLost(FocusEvent e) {
         whiteboard.insertText(getText(), getLocation());
         setEditable(false);
         setBorder(null);
         setText("");
+        whiteboard.remove(this);
     }
 
     // Create border around text field to indicate it is being edited.
