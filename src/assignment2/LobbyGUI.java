@@ -14,6 +14,8 @@ public class LobbyGUI {
     private JButton usernameConfirmButton;
     private JButton createWhiteboardButton;
     private JComboBox whiteboardSelection;
+
+
     private final JFrame frame;
 
     private String user;
