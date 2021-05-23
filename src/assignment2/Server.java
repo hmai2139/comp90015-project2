@@ -6,7 +6,10 @@ import java.net.Socket;
 import java.net.SocketException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Server {
 
@@ -15,7 +18,7 @@ public class Server {
     public static final int PORT_MAX = 65535;
 
     // Currently connected users and their whiteboards.
-    private Map<String, Whiteboard> users;
+    public static Map<String, Whiteboard> users = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
         // Get port from STDIN.
@@ -26,6 +29,8 @@ public class Server {
             System.out.printf("Port must be in range %s-%s. %n", PORT_MIN, PORT_MAX );
             System.exit(-1);
         }
+
+        users.put("hoang", new Whiteboard());
 
         // Open the Server Socket.
         ServerSocket server = new ServerSocket(PORT);
@@ -45,20 +50,19 @@ public class Server {
                 DataOutputStream dataOutputStream = new DataOutputStream(client.getOutputStream());
 
                 // Create Object I/O streams to send/receive Objects to/from client.
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
-                ObjectInputStream objectInputStream =  new ObjectInputStream(client.getInputStream());
+                //ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+                //ObjectInputStream objectInputStream =  new ObjectInputStream(client.getInputStream());
                 System.out.println("Creating new thread for the client " + client + "...");
 
-                // Create a new RequestHandler thread.
-                //Thread thread = new RequestHandler(client, in, out, dictionary, source);
+                // Create a new TextRequestHandler thread to handle text-based request.
+                Thread textThread = new TextRequestHandler(client, dataInputStream, dataOutputStream);
 
-                // Start the thread.
-                //thread.start();
+                // Start the threads.
+                textThread.start();
             }
             // Socket error as client disconnects.
             catch (SocketException e) {
                 System.out.println("Socket error: connection with " + client + " has been terminated.");
-                return;
             }
             catch (Exception e) {
                 client.close();
@@ -74,25 +78,27 @@ public class Server {
 class TextRequestHandler extends Thread {
 
     // Types of request.
-    private final String LOGIN = "login";
-    private final String CHAT = "chat";
+    public final String LOGIN = "login";
+    public final String CHAT = "chat";
+    public final String EXIT = "exit";
 
-    // Types of error.
-    private final String INVALID = "Invalid request.";
+    // Type of response to failed requests.
+    public final String USERNAME_TAKEN = "Username already exists.";
+    public final String INVALID = "Invalid request.";
+
+    // Type of response to successful requests.
+    public final String LOGIN_SUCCESS = "Successfully logged in.";
 
     // Socket, input stream, output stream.
     final Socket socket;
     final DataInputStream in;
     final DataOutputStream out;
-    private Map<String, Whiteboard> users;
 
     // Class constructor.
-    public TextRequestHandler(Socket socket, DataInputStream in, DataOutputStream out,
-                              Map<String, Whiteboard> users) {
+    public TextRequestHandler(Socket socket, DataInputStream in, DataOutputStream out) {
         this.socket = socket;
         this.in = in;
         this.out = out;
-        this.users = users;
     }
 
     // Take a client request (a JSON string) and convert it to a TextRequest object.
@@ -124,7 +130,7 @@ class TextRequestHandler extends Thread {
 
                 // Empty request.
                 if (request == null) {
-                    out.writeUTF(INVALID);
+                    //out.writeUTF(INVALID);
                     continue;
                 }
 
@@ -132,10 +138,14 @@ class TextRequestHandler extends Thread {
                     case LOGIN:
                         // No username provided or username contains only whitespace character(s).
                         if (request.user == null || request.user.trim().isEmpty()) {
-                            reply = this.login(request.user, this.users);
-                            out.writeUTF(reply);
-                            break;
+                            out.writeUTF(INVALID);
                         }
+                        else {
+                            reply = login(request.user);
+                            System.out.println("reply is " + reply);
+                            out.writeUTF(reply);
+                        }
+                        break;
                 }
             }
             // Socket error, close thread.
@@ -155,21 +165,21 @@ class TextRequestHandler extends Thread {
             }
         }
     }
-
     // Handles login request.
-    public synchronized String login(String user, Map<String, Whiteboard> users) {
-
-        // Chosen username already exists.
-        if (users.containsKey(user.toLowerCase())) {
-            return ("Username already exists.");
-        }
+    public synchronized String login(String user) {
 
         // Create user and initialise their whiteboard as null.
-        users.put(user, null);
-        return ("Successfully logged in.");
+        if (!Server.users.containsKey(user.toLowerCase())) {
+            Server.users.put(user, null);
+            return (LOGIN_SUCCESS);
+
+        }
+
+        // Chosen username already exists.
+        System.out.println("taken");
+        return (USERNAME_TAKEN);
     }
 }
-
 
 /*
  ** Representation of a given client text-based request.

@@ -31,10 +31,6 @@ public class WhiteboardGUI extends JFrame {
     // GUI main frame.
     private final JFrame frame;
 
-    public static void main(String[] args) {
-        new WhiteboardGUI("hoang");
-    }
-
     public WhiteboardGUI(String manager) {
         // Get screen size.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -57,7 +53,6 @@ public class WhiteboardGUI extends JFrame {
         frame.setContentPane(panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        //frame.add(menuBar);
         frame.setMinimumSize(new Dimension(screenSize.width / 2,(int) (screenSize.height*0.8)));
         frame.setLocation(this.getX() + this.getWidth(), screenSize.height/20);
         frame.pack();

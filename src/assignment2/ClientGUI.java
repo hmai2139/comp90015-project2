@@ -19,12 +19,20 @@ public class ClientGUI {
     public static JFrame errorFrame;
     public static JPanel errorPanel;
 
+    // Types of request.
+    public final String LOGIN = "login";
+    public final String CHAT = "chat";
+    public final String EXIT = "exit";
+
+    // Type of response to failed requests.
+    public final String USERNAME_TAKEN = "Username already exists.";
+    public final String INVALID = "Invalid request.";
+
+    // Type of response to successful requests.
+    public final String LOGIN_SUCCESS = "Successfully logged in.";
+
     // Client.
     private final Client client;
-
-    public static void main(String[] args) {
-        //new ClientGUI();
-    }
 
     public ClientGUI(Client client) {
         this.client = client;
@@ -47,13 +55,28 @@ public class ClientGUI {
             @Override
             public void actionPerformed(ActionEvent e) {
                 user = usernameField.getText();
-                if (user == null || user.equals("")) {
+
+                // Check if username is empty or contains only whitespace character(s).
+                // This test is performed server-side as well.
+                if (user == null || user.trim().isEmpty()) {
                     JOptionPane.showMessageDialog(frame, "Please enter a username.",
                             "No username provided.", JOptionPane.ERROR_MESSAGE);
                 }
+
+                // Username is provided, attempts to login.
                 else {
-                    for (Component component : panelMain.getComponents()) {
-                        component.setEnabled(true);
+                    String response = client.login(user, client.outputStream(), client.inputStream());
+                    System.out.println(response);
+                    switch (response) {
+                        case (USERNAME_TAKEN):
+                            JOptionPane.showMessageDialog(frame, client.USERNAME_TAKEN,
+                                    "Login error", JOptionPane.ERROR_MESSAGE);
+                            break;
+                        case (LOGIN_SUCCESS):
+                            for (Component component : panelMain.getComponents()) {
+                                component.setEnabled(true);
+                            }
+                            break;
                     }
                 }
             }
@@ -82,6 +105,7 @@ public class ClientGUI {
         usernameConfirmButton.addActionListener(confirmName);
         usernameField.addActionListener(confirmName);
     }
+
     // Display error message if error is encountered during start-up.
     public static void showErrorPanel(String message, String error) {
         errorFrame = new JFrame("Whiteboard client");

@@ -9,9 +9,16 @@ import org.json.simple.JSONArray;
 public class Client {
 
     // Types of request.
-    private static final String LOGIN = "login";
-    private static final String CHAT = "chat";
-    private static final String EXIT = "exit";
+    public final String LOGIN = "login";
+    public final String CHAT = "chat";
+    public final String EXIT = "exit";
+
+    // Type of response to failed requests.
+    public final String USERNAME_TAKEN = "Username already exists.";
+    public final String INVALID = "Invalid request.";
+
+    // Type of response to successful requests.
+    public final String LOGIN_SUCCESS = "Successfully logged in.";
 
     // Socket, input and output streams.
     private final Socket socket;
@@ -103,12 +110,14 @@ public class Client {
                 LOGIN, user);
         try {
             out.writeUTF(requestJSON);
-            String reply = in.readUTF();
-            return reply;
+            String response = in.readUTF();
+            System.out.println(response);
+            return response;
         }
         catch (Exception e) {
-            String reply = e.getMessage();
-            return reply;
+            String response = e.getMessage();
+            System.out.println(response);
+            return response;
         }
     }
 
@@ -118,12 +127,12 @@ public class Client {
                 LOGIN, user, message);
         try {
             out.writeUTF(requestJSON);
-            String reply = in.readUTF();
-            return reply;
+            String response = in.readUTF();
+            return response;
         }
         catch (Exception e) {
-            String reply = e.getMessage();
-            return reply;
+            String response = e.getMessage();
+            return response;
         }
     }
 
