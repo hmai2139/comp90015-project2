@@ -130,7 +130,7 @@ class TextRequestHandler extends Thread {
 
                 // Empty request.
                 if (request == null) {
-                    //out.writeUTF(INVALID);
+                    out.writeUTF(INVALID);
                     continue;
                 }
 
