@@ -228,6 +228,9 @@ public class Whiteboard extends JComponent {
         return this.shapes;
     }
 
+    // Get manager of whiteboard.
+    public String manager() { return this.manager; }
+
     // Clear whiteboard.
     public void clear() {
         this.shapes = new ArrayList<>();

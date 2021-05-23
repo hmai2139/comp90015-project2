@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeListener;
 
-public class LobbyGUI {
+public class ClientGUI {
     private JPanel panelMain;
     private JTextField usernameField;
     private JButton usernameConfirmButton;
@@ -15,18 +15,28 @@ public class LobbyGUI {
     private final Action confirmName;
     private String user;
 
+    // Error message components.
+    public static JFrame errorFrame;
+    public static JPanel errorPanel;
+
+    // Client.
+    private final Client client;
+
     public static void main(String[] args) {
-        new LobbyGUI();
+        //new ClientGUI();
     }
 
-    public LobbyGUI() {
-        frame = new JFrame("Lobby");
+    public ClientGUI(Client client) {
+        this.client = client;
+
+        frame = new JFrame("Whiteboard client");
         frame.setContentPane(panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
+        // Create a new whiteboard and set user as its manager.
         createWhiteboardButton.addActionListener(e -> {
             new WhiteboardGUI(user);
         });
@@ -72,4 +82,15 @@ public class LobbyGUI {
         usernameConfirmButton.addActionListener(confirmName);
         usernameField.addActionListener(confirmName);
     }
+    // Display error message if error is encountered during start-up.
+    public static void showErrorPanel(String message, String error) {
+        errorFrame = new JFrame("Whiteboard client");
+        errorFrame.setMinimumSize(new Dimension(450, 340));
+        errorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        errorFrame.pack();
+        errorFrame.setLocationRelativeTo(null);
+        JOptionPane.showMessageDialog(errorFrame, message, error, JOptionPane.ERROR_MESSAGE);
+    }
+
+    public JFrame frame() { return this.frame; }
 }

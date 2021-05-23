@@ -3,12 +3,13 @@ package assignment2;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class WhiteboardGUI extends JFrame {
 
     private JPanel panelMain;
     private JScrollPane logScrollPanel;
-    private JTextPane logPanel;
     private JComboBox insertMenu;
     private JButton newButton;
     private JPanel fileMenuPanel;
@@ -22,8 +23,8 @@ public class WhiteboardGUI extends JFrame {
     private JButton saveButton;
     private JButton saveAsButton;
     private JButton closeButton;
-    private JPanel interactionPanel;
     private JPanel userMenuPanel;
+    private JTextArea logArea;
     private JPanel userInteractionPanel;
     private Whiteboard whiteboard;
 
@@ -116,10 +117,21 @@ public class WhiteboardGUI extends JFrame {
         switchBackgroundButton.addActionListener(e -> {
             whiteboard.switchGrid();
         });
+
+        // Add welcome message.
+        logArea.append(localDateTime() + "Welcome to " + manager + "'s whiteboard.");
+        logArea.append("\n");
     }
 
     // Get Whiteboard GUI's frame.
     public JFrame frame() {
         return this.frame;
+    }
+
+    // Get local date and time.
+    public String localDateTime() {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss: ");
+        LocalDateTime now = LocalDateTime.now();
+        return (dateTimeFormatter.format(now));
     }
 }
