@@ -47,7 +47,7 @@ public class LobbyGUI {
                     }
                 }
             }
-            
+
             // Following methods must be implemented, but are left empty because they are unnecessary.
             @Override
             public Object getValue(String key) { return null; }
