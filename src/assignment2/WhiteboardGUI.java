@@ -17,11 +17,12 @@ public class WhiteboardGUI extends JFrame {
     private JButton leaveButton;
     private JTextField chatField;
     private JLabel userSelection;
-    private JPanel whiteboardMenuPanel;
+    private JPanel drawPanel;
     private JButton openButton;
     private JButton saveButton;
     private JButton saveAsButton;
     private JButton closeButton;
+    private JPanel interactionPanel;
     private JPanel userMenuPanel;
     private JPanel userInteractionPanel;
     private Whiteboard whiteboard;
