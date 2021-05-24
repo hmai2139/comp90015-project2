@@ -4,11 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class WhiteboardGUI extends JFrame {
+public class WhiteboardGUI {
 
     private JPanel panelMain;
     private JScrollPane logScrollPanel;
@@ -29,35 +28,48 @@ public class WhiteboardGUI extends JFrame {
     private JTextArea logArea;
     private JPanel userInteractionPanel;
     private Whiteboard whiteboard;
+    private String manager;
+    private String name;
 
-    // GUI main frame.
-    private final JFrame frame;
+    // GUI's canvas frame.
+    private JFrame canvas;
+
+    // GUI's control frame.
+    private final JFrame controlFrame;
 
     public WhiteboardGUI(String manager, String name) {
+        this.manager = manager;
+        this.name = name;
+
         // Get screen size.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         // Initialise whiteboard.
         whiteboard = new Whiteboard(manager, name);
-        this.setTitle(name);
+        canvas = new JFrame("Canvas");
+        canvas.setTitle(name);
 
-        // Customise drawing area of whiteboard.
+        // Customise canvas.
         whiteboard.setBackground(Color.WHITE);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
-        this.setLocation(5, screenSize.height/20);
-        this.add(whiteboard);
+        canvas.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        canvas.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
+        canvas.setLocation(5, screenSize.height/20);
+        canvas.add(whiteboard);
         colourButton.setBackground(whiteboard.colour());
-        this.setVisible(true);
+        canvas.setVisible(true);
 
         // Whiteboard GUI's initialisation and customisations.
-        frame = new JFrame("User interface");
-        frame.setContentPane(panelMain);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setMinimumSize(new Dimension(screenSize.width / 2,(int) (screenSize.height*0.8)));
-        frame.setLocation(this.getX() + this.getWidth(), screenSize.height/20);
-        frame.pack();
-        frame.setVisible(true);
+        controlFrame = new JFrame("User interface");
+        controlFrame.setContentPane(panelMain);
+        controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        controlFrame.setMinimumSize(new Dimension(screenSize.width / 2,(int) (screenSize.height*0.8)));
+        controlFrame.setLocation(canvas.getX() + canvas.getWidth(), screenSize.height/20);
+        controlFrame.pack();
+        controlFrame.setVisible(true);
+
+        // Add welcome message.
+        logArea.append(localDateTime() + "Welcome.");
+        logArea.append("\n");
 
         // Leave the whiteboard.
         leaveButton.addActionListener(e -> {
@@ -78,7 +90,7 @@ public class WhiteboardGUI extends JFrame {
                 if (e.getClickCount() == 2) {
                     TextField textField = new TextField(whiteboard);
                     textField.setLocation(e.getPoint());
-                    add(textField);
+                    canvas.add(textField);
                     textField.requestFocusInWindow();
                 }
             }
@@ -94,7 +106,7 @@ public class WhiteboardGUI extends JFrame {
         // Select a colour and update current colour indicator.
         colourButton.addActionListener(e -> {
             Color colour = whiteboard.colour();
-            colour = JColorChooser.showDialog(frame, "Select a colour", colour);
+            colour = JColorChooser.showDialog(controlFrame, "Select a colour", colour);
             if (colour != null) {
                 whiteboard.setColour(colour);
                 colourButton.setBackground(colour);
@@ -106,18 +118,15 @@ public class WhiteboardGUI extends JFrame {
             whiteboard.switchGrid();
         });
 
-        // Add welcome message.
-        logArea.append(localDateTime() + "Welcome.");
-        logArea.append("\n");
-
         // -------- Manager-exclusive action listeners -------- //
 
         // Clear all drawn shapes from whiteboard.
         newButton.addActionListener(e -> {
-                whiteboard = new Whiteboard(manager, name);
-                add(whiteboard);
-                revalidate();
-                repaint();
+            canvas.remove(whiteboard);
+            whiteboard = new Whiteboard(manager, name);
+            canvas.add(whiteboard);
+            canvas.revalidate();
+            canvas.repaint();
         });
 
         // Open an existing whiteboard from file.
@@ -129,7 +138,7 @@ public class WhiteboardGUI extends JFrame {
                 fileChooser.setCurrentDirectory(workingDir);
 
                 // returnValue = 0 indicates that a file has been chosen, = 1 otherwise.
-                int returnValue = fileChooser.showOpenDialog(this);
+                int returnValue = fileChooser.showOpenDialog(controlFrame);
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File file = fileChooser.getSelectedFile();
 
@@ -138,24 +147,23 @@ public class WhiteboardGUI extends JFrame {
 
                     // Read whiteboard data from the opened file.
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                    whiteboard = (Whiteboard) objectInputStream.readObject();
+                    Whiteboard opened = (Whiteboard) objectInputStream.readObject();
 
-                    // Update current canvas with data from opened whiteboard file.
-                    add(whiteboard);
-                    setTitle(whiteboard.name());
-                    revalidate();
-                    repaint();
+                    whiteboard.setShapes(opened.shapes());
+                    whiteboard.setTexts(opened.texts());
+                    whiteboard.setName(opened.name());
+                    canvas.setTitle(whiteboard.name());
 
                     fileInputStream.close();
                     objectInputStream.close();
                 }
             }
             catch (FileNotFoundException fileNotFoundException) {
-                JOptionPane.showMessageDialog(frame, "No such file exists.",
+                JOptionPane.showMessageDialog(controlFrame, "No such file exists.",
                         "File not found", JOptionPane.ERROR_MESSAGE);
             }
             catch (IOException ioException) {
-                JOptionPane.showMessageDialog(frame, "File may be corrupted/incompatible.",
+                JOptionPane.showMessageDialog(controlFrame, "File may be corrupted/incompatible.",
                         "Cannot open selected file", JOptionPane.ERROR_MESSAGE);
             }
             catch (ClassNotFoundException classNotFoundException) {
@@ -169,14 +177,14 @@ public class WhiteboardGUI extends JFrame {
                 FileOutputStream fileOutputStream = new FileOutputStream(whiteboard.name());
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
                 objectOutputStream.writeObject(whiteboard);
-                JOptionPane.showMessageDialog(frame, "Saved successfully.",
-                        "Save file",JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(controlFrame, "Saved successfully.",
+                        "Save file", JOptionPane.INFORMATION_MESSAGE);
 
                 fileOutputStream.close();
                 objectOutputStream.close();
             }
             catch (IOException ioException) {
-                JOptionPane.showMessageDialog(frame, "Unable to save the current whiteboard.",
+                JOptionPane.showMessageDialog(controlFrame, "Unable to save the current whiteboard.",
                         "Save failed", JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -190,7 +198,7 @@ public class WhiteboardGUI extends JFrame {
                 fileChooser.setCurrentDirectory(workingDir);
 
                 // returnValue = 0 indicates that user pressed Save, = 1 otherwise.
-                int returnValue = fileChooser.showSaveDialog(this);
+                int returnValue = fileChooser.showSaveDialog(controlFrame);
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File file = fileChooser.getSelectedFile();
 
@@ -203,7 +211,7 @@ public class WhiteboardGUI extends JFrame {
                 }
             }
             catch (IOException ioException) {
-                JOptionPane.showMessageDialog(frame, "Unable to save the current whiteboard.",
+                JOptionPane.showMessageDialog(controlFrame, "Unable to save the current whiteboard.",
                         "Save failed", JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -215,8 +223,8 @@ public class WhiteboardGUI extends JFrame {
     }
 
     // Get Whiteboard GUI's frame.
-    public JFrame frame() {
-        return this.frame;
+    public JFrame getControlFrame() {
+        return this.controlFrame;
     }
 
     // Get local date and time.

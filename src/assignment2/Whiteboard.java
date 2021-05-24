@@ -225,13 +225,29 @@ public class Whiteboard extends JComponent
 
     public void setFont(Font font) { this.font = font; }
 
-    public ArrayList<StyledShape> getShapes() {
+    public ArrayList<StyledShape> shapes() {
         return this.shapes;
+    }
+
+    public void setShapes(ArrayList<StyledShape> shapes) {
+        this.shapes = shapes;
+        repaint();
+    }
+
+    public ArrayList<StyledText> texts() { return this.texts; }
+
+    public void setTexts(ArrayList<StyledText> texts) {
+        this.texts = texts;
+        repaint();
     }
 
     public String manager() { return this.manager; }
 
+    public void setManager(String name) { this.manager = manager; }
+
     public String name() { return this.name; }
+
+    public void setName(String name) { this.name = name; }
 
     // Clear whiteboard.
     public void clear() {
