@@ -12,6 +12,7 @@ public class ClientGUI {
     private JButton createWhiteboardButton;
     private JComboBox whiteboardSelection;
     private JLabel usernameLabel;
+    public JLabel connectionInfoLabel;
     private final JFrame frame;
     private final Action login;
     private String user;
@@ -55,7 +56,6 @@ public class ClientGUI {
                 // Username is provided, attempts to login.
                 else {
                     String response = client.login(user, client.outputStream(), client.inputStream());
-                    System.out.println(response);
                         if (response.equals(Response.USERNAME_TAKEN.name())) {
                             JOptionPane.showMessageDialog(frame, "Username already exists.",
                                     "Login error", JOptionPane.ERROR_MESSAGE);

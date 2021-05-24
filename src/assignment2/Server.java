@@ -50,8 +50,9 @@ public class Server {
                 DataOutputStream dataOutputStream = new DataOutputStream(client.getOutputStream());
 
                 // Create Object I/O streams to send/receive Objects to/from client.
-                //ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
-                //ObjectInputStream objectInputStream =  new ObjectInputStream(client.getInputStream());
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+                ObjectInputStream objectInputStream =  new ObjectInputStream(client.getInputStream());
+
                 System.out.println("Creating new thread for the client " + client + "...");
 
                 // Create a new TextRequestHandler thread to handle text-based request.

@@ -3,6 +3,8 @@ package assignment2;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
+import java.lang.reflect.Array;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -63,11 +65,6 @@ public class WhiteboardGUI extends JFrame {
             System.exit(0);
         });
 
-        // Close the whiteboard.
-        closeButton.addActionListener(e -> {
-            System.exit(0);
-        });
-
         // Insert text at the location of user's cursor.
         whiteboard.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
@@ -105,9 +102,6 @@ public class WhiteboardGUI extends JFrame {
             }
         });
 
-        // Clear all drawn shapes from whiteboard.
-        newButton.addActionListener(e -> whiteboard.clear());
-
         // Switch background.
         switchBackgroundButton.addActionListener(e -> {
             whiteboard.switchGrid();
@@ -116,6 +110,55 @@ public class WhiteboardGUI extends JFrame {
         // Add welcome message.
         logArea.append(localDateTime() + "Welcome to " + manager + "'s whiteboard.");
         logArea.append("\n");
+
+        // -------- Manager-exclusive action listeners -------- //
+
+        // Clear all drawn shapes from whiteboard.
+        newButton.addActionListener(e -> whiteboard.clear());
+
+        // Open an existing whiteboard from file.
+        openButton.addActionListener(e -> {
+            try {
+                FileInputStream fis = new FileInputStream("t.tmp");
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                Whiteboard fromFile = (Whiteboard) ois.readObject();
+                whiteboard = fromFile;
+                System.out.println(whiteboard.getShapes().size());
+                this.add(whiteboard);
+                whiteboard.repaint();
+                ois.close();
+            }
+            catch (FileNotFoundException fileNotFoundException) {
+                fileNotFoundException.printStackTrace();
+            }
+            catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+            catch (ClassNotFoundException classNotFoundException) {
+                classNotFoundException.printStackTrace();
+            }
+        });
+
+        // Save the current whiteboard by updating its current source file.
+        saveButton.addActionListener(e -> {
+            try {
+                FileOutputStream fos = new FileOutputStream("t.tmp");
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                oos.writeObject(whiteboard);
+                oos.close();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        });
+
+        // Save the current whiteboard as a new file or to a file chosen by manager.
+        saveAsButton.addActionListener(e -> {});
+
+        // Close the whiteboard.
+        closeButton.addActionListener(e -> {
+            System.exit(0);
+        });
+
     }
 
     // Get Whiteboard GUI's frame.

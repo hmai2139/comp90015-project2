@@ -24,26 +24,30 @@ public class Client {
             final int PORT = Integer.parseInt(args[1]);
 
             // Open connection to the dictionary server, at port PORT.
-            Socket socket = new Socket(SERVER, PORT);
+            Socket server = new Socket(SERVER, PORT);
             System.out.println("Successfully connected to " + SERVER + " at port " + PORT);
 
-            // Obtaining input and output streams.
-            DataInputStream in = new DataInputStream(socket.getInputStream());
-            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+            // Obtaining Data I/O streams to communicate with server.
+            DataInputStream dataInputStream = new DataInputStream(server.getInputStream());
+            DataOutputStream dataOutputStream = new DataOutputStream(server.getOutputStream());
+
+            // Obtaining Object I/O streams to send/receive Objects to/from server.
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(server.getOutputStream());
+            ObjectInputStream objectInputStream =  new ObjectInputStream(server.getInputStream());
 
             // Scanner to get input from STDIN.
             Scanner scanner = new Scanner(System.in);
 
-            Client client = new Client(socket, in, out, scanner);
+            Client client = new Client(server, dataInputStream, dataOutputStream, scanner);
 
             // Infinite loop to handle communication between client and server's client handler.
             while (true) {
                 // Get request from STDIN and send to client handler.
                 String request = client.scanner.nextLine();
-                out.writeUTF(request);
+                dataOutputStream.writeUTF(request);
 
                 // Get reply from client handler.
-                String reply = in.readUTF();
+                String reply = dataInputStream.readUTF();
                 System.out.println(reply);
             }
         }
@@ -90,6 +94,9 @@ public class Client {
         this.out = out;
         this.scanner = scanner;
         this.gui = new ClientGUI(this);
+        this.gui.connectionInfoLabel.setText(
+                String.format("%s:%s",
+                    socket.getInetAddress(), socket.getPort()));
     }
 
     // Submits login request.
