@@ -1,8 +1,9 @@
 package assignment2;
 
 import java.awt.*;
+import java.io.Serializable;
 
-public class StyledShape {
+public class StyledShape implements Serializable {
     private Shape shape;
     private Color colour;
 

@@ -1,8 +1,9 @@
 package assignment2;
 
 import java.awt.*;
+import java.io.Serializable;
 
-public class StyledText {
+public class StyledText implements Serializable {
     private String text;
     private Color colour;
     private Font font;

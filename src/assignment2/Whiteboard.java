@@ -6,11 +6,13 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import javax.swing.*;
 
-public class Whiteboard extends JComponent {
+public class Whiteboard extends JComponent
+        implements Serializable {
 
     // Shapes drawn on whiteboard.
     private ArrayList<StyledShape> shapes = new ArrayList<>();

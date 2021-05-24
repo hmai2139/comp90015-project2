@@ -77,17 +77,6 @@ public class Server {
  */
 class TextRequestHandler extends Thread {
 
-    // Types of request.
-    public final String LOGIN = "login";
-    public final String CHAT = "chat";
-    public final String EXIT = "exit";
-
-    // Type of response to failed requests.
-    public final String USERNAME_TAKEN = "Username already exists.";
-    public final String INVALID = "Invalid request.";
-
-    // Type of response to successful requests.
-    public final String LOGIN_SUCCESS = "Successfully logged in.";
 
     // Socket, input stream, output stream.
     final Socket socket;
@@ -130,22 +119,21 @@ class TextRequestHandler extends Thread {
 
                 // Empty request.
                 if (request == null) {
-                    out.writeUTF(INVALID);
+                    out.writeUTF(Response.INVALID.name());
                     continue;
                 }
+                Request operation = Request.valueOf(request.operation.toUpperCase());
 
-                switch (request.operation.toLowerCase()) {
-                    case LOGIN:
-                        // No username provided or username contains only whitespace character(s).
-                        if (request.user == null || request.user.trim().isEmpty()) {
-                            out.writeUTF(INVALID);
-                        }
-                        else {
-                            reply = login(request.user);
-                            System.out.println("reply is " + reply);
-                            out.writeUTF(reply);
-                        }
-                        break;
+                if (operation == Request.LOGIN) {
+                    // No username provided or username contains only whitespace character(s).
+                    if (request.user == null || request.user.trim().isEmpty()) {
+                        out.writeUTF(Response.INVALID.name());
+                    }
+                    else {
+                        reply = login(request.user);
+                        System.out.println("reply is " + reply);
+                        out.writeUTF(reply);
+                    }
                 }
             }
             // Socket error, close thread.
@@ -157,7 +145,7 @@ class TextRequestHandler extends Thread {
                 e.printStackTrace();
             }
             catch (NullPointerException e) {
-                System.out.println(INVALID);
+                System.out.println(Response.INVALID);
             }
             catch (Exception e) {
                 System.out.println(e.getMessage());
@@ -171,13 +159,13 @@ class TextRequestHandler extends Thread {
         // Create user and initialise their whiteboard as null.
         if (!Server.users.containsKey(user.toLowerCase())) {
             Server.users.put(user, null);
-            return (LOGIN_SUCCESS);
+            return (Response.LOGIN_SUCCESS.name());
 
         }
 
         // Chosen username already exists.
         System.out.println("taken");
-        return (USERNAME_TAKEN);
+        return (Response.USERNAME_TAKEN.name());
     }
 }
 

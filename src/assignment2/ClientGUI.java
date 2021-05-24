@@ -11,25 +11,14 @@ public class ClientGUI {
     private JButton usernameConfirmButton;
     private JButton createWhiteboardButton;
     private JComboBox whiteboardSelection;
+    private JLabel usernameLabel;
     private final JFrame frame;
-    private final Action confirmName;
+    private final Action login;
     private String user;
 
     // Error message components.
     public static JFrame errorFrame;
     public static JPanel errorPanel;
-
-    // Types of request.
-    public final String LOGIN = "login";
-    public final String CHAT = "chat";
-    public final String EXIT = "exit";
-
-    // Type of response to failed requests.
-    public final String USERNAME_TAKEN = "Username already exists.";
-    public final String INVALID = "Invalid request.";
-
-    // Type of response to successful requests.
-    public final String LOGIN_SUCCESS = "Successfully logged in.";
 
     // Client.
     private final Client client;
@@ -49,8 +38,8 @@ public class ClientGUI {
             new WhiteboardGUI(user);
         });
 
-        // Username confirmation action.
-        confirmName = new Action() {
+        // GUI login action.
+        login = new Action() {
 
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -67,16 +56,18 @@ public class ClientGUI {
                 else {
                     String response = client.login(user, client.outputStream(), client.inputStream());
                     System.out.println(response);
-                    switch (response) {
-                        case (USERNAME_TAKEN):
-                            JOptionPane.showMessageDialog(frame, client.USERNAME_TAKEN,
+                        if (response.equals(Response.USERNAME_TAKEN.name())) {
+                            JOptionPane.showMessageDialog(frame, "Username already exists.",
                                     "Login error", JOptionPane.ERROR_MESSAGE);
-                            break;
-                        case (LOGIN_SUCCESS):
+                        }
+
+                        else if (response.equals(Response.LOGIN_SUCCESS.name())) {
                             for (Component component : panelMain.getComponents()) {
                                 component.setEnabled(true);
                             }
-                            break;
+                            usernameConfirmButton.setEnabled(false);
+                            usernameField.setEditable(false);
+                            usernameLabel.setText("You are logged in as: ");
                     }
                 }
             }
@@ -102,8 +93,8 @@ public class ClientGUI {
         };
 
         // Confirm username when user press Confirm/Enter.
-        usernameConfirmButton.addActionListener(confirmName);
-        usernameField.addActionListener(confirmName);
+        usernameConfirmButton.addActionListener(login);
+        usernameField.addActionListener(login);
     }
 
     // Display error message if error is encountered during start-up.

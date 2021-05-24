@@ -8,18 +8,6 @@ import org.json.simple.JSONArray;
 
 public class Client {
 
-    // Types of request.
-    public final String LOGIN = "login";
-    public final String CHAT = "chat";
-    public final String EXIT = "exit";
-
-    // Type of response to failed requests.
-    public final String USERNAME_TAKEN = "Username already exists.";
-    public final String INVALID = "Invalid request.";
-
-    // Type of response to successful requests.
-    public final String LOGIN_SUCCESS = "Successfully logged in.";
-
     // Socket, input and output streams.
     private final Socket socket;
     private final DataInputStream in;
@@ -107,7 +95,7 @@ public class Client {
     // Submits login request.
     public String login(String user, DataOutputStream out, DataInputStream in) {
         String requestJSON = String.format("{\"operation\": \"%s\", \"user\": \"%s\" }",
-                LOGIN, user);
+                Request.LOGIN.name(), user);
         try {
             out.writeUTF(requestJSON);
             String response = in.readUTF();
@@ -124,7 +112,7 @@ public class Client {
     // Submits chat request.
     public String chat(String user, String message, DataOutputStream out, DataInputStream in) {
         String requestJSON = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
-                LOGIN, user, message);
+                Request.CHAT.name(), user, message);
         try {
             out.writeUTF(requestJSON);
             String response = in.readUTF();
