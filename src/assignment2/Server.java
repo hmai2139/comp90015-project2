@@ -30,8 +30,6 @@ public class Server {
             System.exit(-1);
         }
 
-        users.put("hoang", new Whiteboard());
-
         // Open the Server Socket.
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("Server started, waiting for connection...");

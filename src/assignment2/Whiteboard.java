@@ -41,7 +41,13 @@ public class Whiteboard extends JComponent
     // Whiteboard users.
     private ArrayList<String> users = new ArrayList<>();
 
-    public Whiteboard() {
+    // Whiteboard filename, to be used in Save/Save As operations
+    private String name;
+
+    public Whiteboard(String manager, String name) {
+        this.manager = manager;
+        this.name = name;
+        users.add(manager);
 
         // Get start location of user's cursor.
         addMouseListener(new MouseAdapter() {
@@ -207,31 +213,25 @@ public class Whiteboard extends JComponent
         repaint();
     }
 
-    // Get current insert mode.
     public Mode mode() { return this.mode; }
 
-    // Set insert mode.
     public void setMode(Mode mode) { this.mode = mode; }
 
-    // Get current colour.
     public Color colour() { return this.colour; }
 
-    // Set colour.
     public void setColour(Color colour) { this.colour = colour; }
 
-    // Get current font.
     public Font font() { return this.font; }
 
-    // Set font.
     public void setFont(Font font) { this.font = font; }
 
-    // Get all drawn shapes.
     public ArrayList<StyledShape> getShapes() {
         return this.shapes;
     }
 
-    // Get manager of whiteboard.
     public String manager() { return this.manager; }
+
+    public String name() { return this.name; }
 
     // Clear whiteboard.
     public void clear() {

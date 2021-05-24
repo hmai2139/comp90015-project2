@@ -13,8 +13,11 @@ public class ClientGUI {
     private JComboBox whiteboardSelection;
     private JLabel usernameLabel;
     public JLabel connectionInfoLabel;
+    private JTextField whiteboardNameField;
+    private JLabel whiteboardNameLabel;
     private final JFrame frame;
     private final Action login;
+    private final Action create;
     private String user;
 
     // Error message components.
@@ -34,12 +37,7 @@ public class ClientGUI {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        // Create a new whiteboard and set user as its manager.
-        createWhiteboardButton.addActionListener(e -> {
-            new WhiteboardGUI(user);
-        });
-
-        // GUI login action.
+        // GUI Action to log user in.
         login = new Action() {
 
             @Override
@@ -92,9 +90,54 @@ public class ClientGUI {
             public void removePropertyChangeListener(PropertyChangeListener listener) {}
         };
 
-        // Confirm username when user press Confirm/Enter.
+        // Confirm username when user presses Confirm/Enter.
         usernameConfirmButton.addActionListener(login);
         usernameField.addActionListener(login);
+
+        // GUI Action to create a new whiteboard.
+        create = new Action() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String whiteboardName = whiteboardNameField.getText();
+
+                // Checks if whiteboard name is empty or contains only whitespace character(s).
+                // This test is performed server-side as well.
+                if (whiteboardName == null || whiteboardName.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "Please enter a whiteboard name.",
+                            "No whiteboard name provided.", JOptionPane.ERROR_MESSAGE);
+                }
+
+                // Attempts to create a whiteboard with the provided name.
+                else {
+                    new WhiteboardGUI(user, whiteboardName);
+                    createWhiteboardButton.setEnabled(false);
+                    whiteboardNameField.setEditable(false);
+                    whiteboardNameLabel.setText("Current whiteboard: ");
+                }
+            }
+
+            @Override
+            public Object getValue(String key) { return null; }
+
+            @Override
+            public void putValue(String key, Object value) { }
+
+            @Override
+            public void setEnabled(boolean b) { }
+
+            @Override
+            public boolean isEnabled() { return false; }
+
+            @Override
+            public void addPropertyChangeListener(PropertyChangeListener listener) { }
+
+            @Override
+            public void removePropertyChangeListener(PropertyChangeListener listener) { }
+        };
+
+        // Create a new whiteboard when user presses Create/Enter.
+        createWhiteboardButton.addActionListener(create);
+        whiteboardNameField.addActionListener(create);
     }
 
     // Display error message if error is encountered during start-up.
