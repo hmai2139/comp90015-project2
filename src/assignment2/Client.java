@@ -1,7 +1,6 @@
 package assignment2;
 
 // Dependencies.
-import org.w3c.dom.Text;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,8 +16,7 @@ public class Client {
     private final DataOutputStream dataOutputStream;
     private final ObjectOutputStream objectOutputStream;
     private final ObjectInputStream objectInputStream;
-    private final Scanner scanner;
-    private ArrayList<TextRequest> chatlog;
+    private ArrayList<Message> chatlog;
     private WhiteboardGUI gui;
 
     public static void main(String[] args) {
@@ -51,23 +49,18 @@ public class Client {
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(server.getOutputStream());
                 ObjectInputStream objectInputStream = new ObjectInputStream(server.getInputStream());
 
-                // Scanner to get input from STDIN.
-                Scanner scanner = new Scanner(System.in);
-
                 Client client = new Client(USER, server, dataInputStream, dataOutputStream,
-                        objectOutputStream, objectInputStream, scanner);
+                        objectOutputStream, objectInputStream);
 
-                // Infinite loop to handle communication between client and server's client handler.
+                /*// Infinite loop to handle communication between client and server's client handler.
                 while (true) {
 
-                    // Get request from STDIN and send to client handler.
-                    String request = client.scanner.nextLine();
-                    dataOutputStream.writeUTF(request);
-
                     // Get reply from client handler.
-                    String reply = dataInputStream.readUTF();
-                    System.out.println(reply);
-                }
+                    String replyJSON = dataInputStream.readUTF();
+                    Message reply = ChatHandler.parseRequest(replyJSON);
+                    gui.logArea().append(gui.localDateTime(reply.dateTime) + reply.user + ": " + reply.message + "\n");
+                    System.out.println(replyJSON);
+                }*/
             }
         }
 
@@ -100,8 +93,7 @@ public class Client {
     // Class constructor.
     public Client(String user, Socket socket,
                   DataInputStream dataInputStream, DataOutputStream dataOutputStream,
-                  ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream,
-                  Scanner scanner)
+                  ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream)
             throws IOException, ClassNotFoundException {
 
         this.user = user;
@@ -110,11 +102,11 @@ public class Client {
         this.dataOutputStream = dataOutputStream;
         this.objectOutputStream = objectOutputStream;
         this.objectInputStream = objectInputStream;
-        this.scanner = scanner;
 
         // Obtain whiteboard data and chat log from server.
         Whiteboard fromServer = (Whiteboard) objectInputStream.readObject();
-        chatlog = (ArrayList<TextRequest>) objectInputStream.readObject();
+        chatlog = (ArrayList<Message>) objectInputStream.readObject();
+        System.out.println(chatlog.size());
 
         // Extract needed data and create own whiteboard.
         Whiteboard whiteboard = new Whiteboard(fromServer.manager(), user, fromServer.name());
@@ -124,6 +116,21 @@ public class Client {
         // Initialise GUI with Whiteboard data from server.
         this.gui = new WhiteboardGUI(fromServer.manager(), user, fromServer.name(), this, chatlog);
         this.gui.overwrite(whiteboard);
+
+        // Display chat log to-date.
+        for (Message chat: chatlog) {
+            this.gui.logArea().append(gui.localDateTime(chat.dateTime) + chat.user + ": " + chat.message + "\n");
+        }
+
+        // Infinite loop to handle communication between client and server's client handler.
+        while (true) {
+
+            // Get reply from client handler.
+            String replyJSON = dataInputStream.readUTF();
+            Message reply = ChatHandler.parseRequest(replyJSON);
+            gui.logArea().append(gui.localDateTime() + reply.user + ": " + reply.message + "\n");
+            System.out.println(replyJSON);
+        }
     }
 
     // Submits login request.

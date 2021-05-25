@@ -1,7 +1,6 @@
 package assignment2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.*;
 import java.net.BindException;
 import java.net.ServerSocket;
@@ -25,7 +24,7 @@ public class Server {
     public static ConcurrentHashMap<ChatHandler, String> chatThreads = new ConcurrentHashMap<>();
 
     // Chat log.
-    public static ArrayList<TextRequest> chatlog = new ArrayList<>();
+    public static ArrayList<Message> chatlog = new ArrayList<>();
 
     // Whiteboard manager.
     public static String MANAGER;
@@ -33,6 +32,8 @@ public class Server {
     // Whiteboard and whiteboard GUI.
     public static Whiteboard whiteboard;
     public static WhiteboardGUI gui;
+
+    public static Server server;
 
     public static void main(String[] args) throws IOException {
 
@@ -72,7 +73,7 @@ public class Server {
                 // Check if client's chosen username is unique.
                 String requestJSON = dataInputStream.readUTF();
                 System.out.println(requestJSON);
-                TextRequest request = RequestHandler.parseRequest(requestJSON);
+                Message request = RequestHandler.parseRequest(requestJSON);
 
                 // Same name as manager.
                 if (request.user.trim().equalsIgnoreCase(MANAGER.trim())) {
@@ -142,10 +143,10 @@ class RequestHandler extends Thread {
     }
 
     // Take a client request (a JSON string) and convert it to a TextRequest object.
-    public static TextRequest parseRequest(String requestJSON) {
+    public static Message parseRequest(String requestJSON) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            TextRequest request = mapper.readValue(requestJSON, TextRequest.class);
+            Message request = mapper.readValue(requestJSON, Message.class);
             return request;
         }
         catch (Exception e) {
@@ -202,7 +203,6 @@ class RequestHandler extends Thread {
         // Socket error, close thread.
         catch (SocketException e) {
             System.out.println("Socket error: connection with " + client + " has been terminated.");
-            return;
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -242,7 +242,8 @@ class ChatHandler extends Thread {
     public synchronized void run() {
         try {
             String requestJSON;
-            TextRequest request = null;
+            Message request;
+
             while (true) {
 
                 // Receive request (a JSON string) from client and convert it to a TextRequest Object.
@@ -257,7 +258,19 @@ class ChatHandler extends Thread {
                 }
                 request.dateTime = LocalDateTime.now();
                 Server.chatlog.add(request);
+                Server.gui.logArea().append(
+                        Server.gui.localDateTime(request.dateTime) + request.user + ": " + request.message + "\n");
+
+                // Broadcast new message to other clients.
+                for (ChatHandler thread: Server.chatThreads.keySet()) {
+                    if (!Server.chatThreads.get(thread).equals(request.user)){
+                        thread.out().writeUTF(requestJSON);
+                    }
+                }
             }
+        }
+        catch (SocketException e) {
+            System.out.println("Socket error: connection with " + client + " has been terminated.");
         }
         catch (Exception e) {
             System.out.println(e.getMessage());
@@ -266,10 +279,10 @@ class ChatHandler extends Thread {
     }
 
     // Take a client request (a JSON string) and convert it to a TextRequest object.
-    public static TextRequest parseRequest(String requestJSON) {
+    public static Message parseRequest(String requestJSON) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            TextRequest request = mapper.readValue(requestJSON, TextRequest.class);
+            Message request = mapper.readValue(requestJSON, Message.class);
             return request;
         }
         catch (Exception e) {
@@ -277,21 +290,24 @@ class ChatHandler extends Thread {
             return null;
         }
     }
-}
 
+    public DataInputStream in() { return in; }
+
+    public DataOutputStream out() { return out; }
+}
 
 /*
  ** Representation of a given client text-based request.
  */
-class TextRequest
-        implements Comparable<TextRequest>, Serializable {
+class Message
+        implements Comparable<Message>, Serializable {
     public String operation;
     public String user;
     public String message;
     public LocalDateTime dateTime;
 
     // Class constructor.
-    public TextRequest(String operation, String user, String message) {
+    public Message(String operation, String user, String message) {
         this.operation = operation;
         this.user = user;
         this.message = message;
@@ -299,11 +315,11 @@ class TextRequest
     }
 
     // Default constructor.
-    public TextRequest() {
+    public Message() {
     }
 
     @Override
-    public int compareTo(TextRequest o) {
+    public int compareTo(Message o) {
         return this.dateTime.compareTo(o.dateTime);
     }
 }
