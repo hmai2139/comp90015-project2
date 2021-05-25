@@ -6,7 +6,7 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
-import java.io.Serializable;
+import java.io.*;
 import java.util.ArrayList;
 
 import javax.swing.*;
@@ -38,16 +38,27 @@ public class Whiteboard extends JComponent
     // Whiteboard manager.
     private String manager;
 
-    // Whiteboard users.
-    private ArrayList<String> users = new ArrayList<>();
+    // Whiteboard current user.
+    private String user;
 
-    // Whiteboard filename, to be used in Save/Save As operations
+    // Whiteboard filename, to be used in Save/Save As operations.
     private String name;
 
-    public Whiteboard(String manager, String name) {
+    /*private final DataInputStream dataInputStream;
+    private final DataOutputStream dataOutputStream;
+    private final ObjectOutputStream objectOutputStream;
+    private final ObjectInputStream objectInputStream;*/
+
+    public Whiteboard(String manager, String user, String name/*,
+                      DataInputStream dataInputStream, DataOutputStream dataOutputStream,
+                      ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream*/) {
         this.manager = manager;
+        this.user = user;
         this.name = name;
-        users.add(manager);
+        //this.dataInputStream = dataInputStream;
+        //this.dataOutputStream = dataOutputStream;
+        //this.objectOutputStream = objectOutputStream;
+        //this.objectInputStream = objectInputStream;
 
         // Get start location of user's cursor.
         addMouseListener(new MouseAdapter() {

@@ -196,19 +196,6 @@
                   <text value="Grid"/>
                 </properties>
               </component>
-              <component id="cec7a" class="javax.swing.JTextField" binding="chatField">
-                <constraints>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                    <preferred-size width="150" height="27"/>
-                  </grid>
-                </constraints>
-                <properties>
-                  <alignmentY value="0.5"/>
-                  <background color="-1"/>
-                  <text value=""/>
-                  <toolTipText value=""/>
-                </properties>
-              </component>
               <component id="a43ac" class="javax.swing.JLabel">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -260,6 +247,19 @@
                   <enabled value="true"/>
                   <foreground color="-13421773"/>
                   <text value="Leave"/>
+                </properties>
+              </component>
+              <component id="cec7a" class="javax.swing.JTextField" binding="chatField">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="27"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <alignmentY value="0.5"/>
+                  <background color="-1"/>
+                  <text value=""/>
+                  <toolTipText value=""/>
                 </properties>
               </component>
             </children>

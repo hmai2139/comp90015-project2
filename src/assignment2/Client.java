@@ -1,27 +1,32 @@
 package assignment2;
 
 // Dependencies.
+import org.w3c.dom.Text;
+
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import org.json.simple.JSONArray;
 
 public class Client {
 
-    // Socket, input and output streams.
+    private final String user;
     private final Socket socket;
-    private final DataInputStream in;
-    private final DataOutputStream out;
+    private final DataInputStream dataInputStream;
+    private final DataOutputStream dataOutputStream;
+    private final ObjectOutputStream objectOutputStream;
+    private final ObjectInputStream objectInputStream;
     private final Scanner scanner;
-
-    // Client GUI.
-    private ClientGUI gui;
+    private ArrayList<TextRequest> chatlog;
+    private WhiteboardGUI gui;
 
     public static void main(String[] args) {
         try {
-            // Get server address and port from STDIN.
+            // Get server address, port and username from STDIN.
             final String SERVER = args[0];
             final int PORT = Integer.parseInt(args[1]);
+            final String USER = args[2];
 
             // Open connection to the dictionary server, at port PORT.
             Socket server = new Socket(SERVER, PORT);
@@ -31,37 +36,48 @@ public class Client {
             DataInputStream dataInputStream = new DataInputStream(server.getInputStream());
             DataOutputStream dataOutputStream = new DataOutputStream(server.getOutputStream());
 
-            // Obtaining Object I/O streams to send/receive Objects to/from server.
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(server.getOutputStream());
-            ObjectInputStream objectInputStream =  new ObjectInputStream(server.getInputStream());
+            // Submit username to server for authorisation.
+            String response = Client.login(USER, dataInputStream, dataOutputStream);
+            if (response.equals(Response.USERNAME_TAKEN.name())) {
+                Client.showErrorPanel("Please restart client and choose another name.", "Username already exists");
+                System.out.println("Username already exists. Please restart client and choose another name.");
+                System.out.println("Connection with server has been terminated. Exiting...");
+                System.exit(-1);
+            }
 
-            // Scanner to get input from STDIN.
-            Scanner scanner = new Scanner(System.in);
+            // Authorisation is successful.
+            else {
+                // Obtaining Object I/O streams to send/receive Objects to/from server.
+                ObjectOutputStream objectOutputStream = new ObjectOutputStream(server.getOutputStream());
+                ObjectInputStream objectInputStream = new ObjectInputStream(server.getInputStream());
 
-            Client client = new Client(server, dataInputStream, dataOutputStream, scanner);
+                // Scanner to get input from STDIN.
+                Scanner scanner = new Scanner(System.in);
 
-            // Infinite loop to handle communication between client and server's client handler.
-            while (true) {
-                // Get request from STDIN and send to client handler.
-                String request = client.scanner.nextLine();
-                dataOutputStream.writeUTF(request);
+                Client client = new Client(USER, server, dataInputStream, dataOutputStream,
+                        objectOutputStream, objectInputStream, scanner);
 
-                // Get reply from client handler.
-                String reply = dataInputStream.readUTF();
-                System.out.println(reply);
+                // Infinite loop to handle communication between client and server's client handler.
+                while (true) {
+
+                    // Get request from STDIN and send to client handler.
+                    String request = client.scanner.nextLine();
+                    dataOutputStream.writeUTF(request);
+
+                    // Get reply from client handler.
+                    String reply = dataInputStream.readUTF();
+                    System.out.println(reply);
+                }
             }
         }
 
         // Handle connection error.
         catch (ConnectException e) {
+            Client.showErrorPanel("The server might be unavailable, or you might have entered invalid server details.",
+                    "Cannot connect to specified server.");
             System.out.println("Cannot connect to specified server.");
             System.out.println("The server might be unavailable, or you might have entered invalid server details.");
 
-            // Display error message in GUI.
-            ClientGUI.showErrorPanel(
-                    "The server might be unavailable, or you might have entered invalid server details.",
-                    "Cannot connect to the specified server"
-            );
             // Exit.
             System.exit(-1);
         }
@@ -74,13 +90,7 @@ public class Client {
 
         // Handle empty launch argument errors.
         catch (ArrayIndexOutOfBoundsException e) {
-
-            // Display error message in GUI.
-            ClientGUI.showErrorPanel(
-                    "Please enter a server address and port.",
-                    "No server address or/and port provided");
-            // Exit.
-            System.exit(-1);
+            System.out.println("Please enter a server address and port.");
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -88,59 +98,77 @@ public class Client {
     }
 
     // Class constructor.
-    public Client(Socket socket, DataInputStream in, DataOutputStream out, Scanner scanner) {
+    public Client(String user, Socket socket,
+                  DataInputStream dataInputStream, DataOutputStream dataOutputStream,
+                  ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream,
+                  Scanner scanner)
+            throws IOException, ClassNotFoundException {
+
+        this.user = user;
         this.socket = socket;
-        this.in = in;
-        this.out = out;
+        this.dataInputStream = dataInputStream;
+        this.dataOutputStream = dataOutputStream;
+        this.objectOutputStream = objectOutputStream;
+        this.objectInputStream = objectInputStream;
         this.scanner = scanner;
-        this.gui = new ClientGUI(this);
-        this.gui.connectionInfoLabel.setText(
-                String.format("%s:%s",
-                    socket.getInetAddress(), socket.getPort()));
+
+        // Obtain whiteboard data and chat log from server.
+        Whiteboard fromServer = (Whiteboard) objectInputStream.readObject();
+        chatlog = (ArrayList<TextRequest>) objectInputStream.readObject();
+
+        // Extract needed data and create own whiteboard.
+        Whiteboard whiteboard = new Whiteboard(fromServer.manager(), user, fromServer.name());
+        whiteboard.setShapes(fromServer.shapes());
+        whiteboard.setTexts(fromServer.texts());
+
+        // Initialise GUI with Whiteboard data from server.
+        this.gui = new WhiteboardGUI(fromServer.manager(), user, fromServer.name(), this, chatlog);
+        this.gui.overwrite(whiteboard);
     }
 
     // Submits login request.
-    public String login(String user, DataOutputStream out, DataInputStream in) {
+    public static String login(String user, DataInputStream dataInputStream, DataOutputStream dataOutputStream) {
         String requestJSON = String.format("{\"operation\": \"%s\", \"user\": \"%s\" }",
                 Request.LOGIN.name(), user);
         try {
-            out.writeUTF(requestJSON);
-            String response = in.readUTF();
-            System.out.println(response);
-            return response;
+            dataOutputStream.writeUTF(requestJSON);
+            return dataInputStream.readUTF();
         }
         catch (Exception e) {
-            String response = e.getMessage();
-            System.out.println(response);
-            return response;
+            return e.getMessage();
         }
     }
 
     // Submits chat request.
-    public String chat(String user, String message, DataOutputStream out, DataInputStream in) {
+    public void chat(String user, String message) {
         String requestJSON = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
                 Request.CHAT.name(), user, message);
         try {
-            out.writeUTF(requestJSON);
-            String response = in.readUTF();
-            return response;
+            dataOutputStream.writeUTF(requestJSON);
+            //return (ArrayList<TextRequest>) objectInputStream.readObject();
         }
         catch (Exception e) {
-            String response = e.getMessage();
-            return response;
+            e.printStackTrace();
         }
     }
 
-    public DataOutputStream outputStream() {
-        return out;
-    }
+    public String user() { return this.user; }
 
-    public DataInputStream inputStream() {
-        return in;
-    }
+    public DataOutputStream outputStream() { return this.dataOutputStream; }
 
-    // Close client.
-    private void exit(Socket socket) throws Exception {
-        socket.close();
+    public DataInputStream inputStream() { return this.dataInputStream; }
+
+    public ObjectOutputStream objectOutputStream() { return this.objectOutputStream; }
+
+    public ObjectInputStream getObjectInputStream() { return this.objectInputStream; }
+
+    // Display error message if error is encountered during start-up.
+    public static void showErrorPanel(String message, String error) {
+        JFrame errorFrame = new JFrame("Error");
+        errorFrame.setMinimumSize(new Dimension(450, 340));
+        errorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        errorFrame.pack();
+        errorFrame.setLocationRelativeTo(null);
+        JOptionPane.showMessageDialog(errorFrame, message, error, JOptionPane.ERROR_MESSAGE);
     }
 }

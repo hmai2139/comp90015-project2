@@ -1,15 +1,15 @@
 package assignment2;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.*;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
 
@@ -17,12 +17,30 @@ public class Server {
     public static final int PORT_MIN = 1024;
     public static final int PORT_MAX = 65535;
 
-    // Currently connected users and their whiteboards.
-    public static Map<String, Whiteboard> users = new HashMap<>();
+    // Currently connected users and their sockets.
+    public static ConcurrentHashMap<Socket, String> clients = new ConcurrentHashMap<>();
+
+    // Currently connected users and their threads.
+    public static ConcurrentHashMap<RequestHandler, String> requestThreads = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<ChatHandler, String> chatThreads = new ConcurrentHashMap<>();
+
+    // Chat log.
+    public static ArrayList<TextRequest> chatlog = new ArrayList<>();
+
+    // Whiteboard manager.
+    public static String MANAGER;
+
+    // Whiteboard and whiteboard GUI.
+    public static Whiteboard whiteboard;
+    public static WhiteboardGUI gui;
 
     public static void main(String[] args) throws IOException {
+
         // Get port from STDIN.
         final int PORT = Integer.parseInt(args[1]);
+
+        // Get username from STDIN.
+        MANAGER = args[2];
 
         // Invalid port, exit program.
         if (PORT < PORT_MIN || PORT > PORT_MAX) {
@@ -33,6 +51,10 @@ public class Server {
         // Open the Server Socket.
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("Server started, waiting for connection...");
+
+        // Create a new whiteboard and become its manager.
+        gui = new WhiteboardGUI(MANAGER, MANAGER, MANAGER);
+        whiteboard = gui.whiteboard();
 
         // Awaiting potential requests from clients.
         while (true) {
@@ -47,17 +69,48 @@ public class Server {
                 DataInputStream dataInputStream = new DataInputStream(client.getInputStream());
                 DataOutputStream dataOutputStream = new DataOutputStream(client.getOutputStream());
 
-                // Create Object I/O streams to send/receive Objects to/from client.
-                ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
-                ObjectInputStream objectInputStream =  new ObjectInputStream(client.getInputStream());
+                // Check if client's chosen username is unique.
+                String requestJSON = dataInputStream.readUTF();
+                System.out.println(requestJSON);
+                TextRequest request = RequestHandler.parseRequest(requestJSON);
 
-                System.out.println("Creating new thread for the client " + client + "...");
+                // Same name as manager.
+                if (request.user.trim().equalsIgnoreCase(MANAGER.trim())) {
+                    dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
+                    client.close();
+                }
 
-                // Create a new TextRequestHandler thread to handle text-based request.
-                Thread textThread = new TextRequestHandler(client, dataInputStream, dataOutputStream);
+                else {
+                    // Same name as an existing client.
+                    for (Socket socket : clients.keySet()) {
+                        if (clients.get(socket).trim().equalsIgnoreCase(request.user.trim())) {
+                            dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
+                            client.close();
+                        }
+                    }
+                    dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
 
-                // Start the threads.
-                textThread.start();
+                    // Create Object I/O streams to send/receive Objects to/from client.
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+                    ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
+
+                    // Create new threads to handle requests.
+                    System.out.println("Creating new thread for the client " + client + "...");
+                    RequestHandler requestHandler = new RequestHandler(client, objectOutputStream, objectInputStream);
+                    ChatHandler chatHandler = new ChatHandler(client, dataInputStream, dataOutputStream);
+
+                    // Add client to list of clients.
+                    clients.put(client, request.user);
+                    requestThreads.put(requestHandler, request.user);
+                    chatThreads.put(chatHandler, request.user);
+
+                    // Start the threads.
+                    requestHandler.start();
+                    chatHandler.start();
+                }
+            }
+            catch (BindException e) {
+                System.out.println("Address is already in use.");
             }
             // Socket error as client disconnects.
             catch (SocketException e) {
@@ -72,25 +125,24 @@ public class Server {
 }
 
 /*
- ** Thread for handling a given client text-based request.
+ ** Thread for handling clients' requests.
  */
-class TextRequestHandler extends Thread {
+class RequestHandler extends Thread {
 
-
-    // Socket, input stream, output stream.
-    final Socket socket;
-    final DataInputStream in;
-    final DataOutputStream out;
+    // Socket, input streams, output streams.
+    private final Socket client;
+    private final ObjectOutputStream out;
+    private final ObjectInputStream in;
 
     // Class constructor.
-    public TextRequestHandler(Socket socket, DataInputStream in, DataOutputStream out) {
-        this.socket = socket;
-        this.in = in;
+    public RequestHandler(Socket client, ObjectOutputStream out, ObjectInputStream in) {
+        this.client = client;
         this.out = out;
+        this.in = in;
     }
 
     // Take a client request (a JSON string) and convert it to a TextRequest object.
-    private TextRequest parseRequest(String requestJSON) {
+    public static TextRequest parseRequest(String requestJSON) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             TextRequest request = mapper.readValue(requestJSON, TextRequest.class);
@@ -104,13 +156,95 @@ class TextRequestHandler extends Thread {
 
     // Overrides default run method.
     @Override
-    public void run() {
-        String requestJSON;
-        TextRequest request;
+    public synchronized void run() {
+        try {
+            // Send current whiteboard data to client.
+            out.writeObject(Server.whiteboard);
 
-        while(true) {
-            String reply;
-            try {
+            // Send current chat log to client.
+            out.writeObject(Server.chatlog);
+
+            while (true) {
+                /*
+                // Receive request (a JSON string) from client and convert it to a TextRequest Object.
+                requestJSON = dataInputStream.readUTF();
+                System.out.println(requestJSON);
+                request = parseRequest(requestJSON);
+
+                // Empty request.
+                if (request == null) {
+                    dataOutputStream.writeUTF(Response.INVALID.name());
+                    continue;
+                }
+                Request operation = Request.valueOf(request.operation.toUpperCase());
+
+                // Handle chat request.
+                if (operation == Request.CHAT) {
+
+                    // Empty message.
+                    if (request.message == null || request.message.trim().equals("")) {
+                        dataOutputStream.writeUTF(Response.INVALID.name());
+                    }
+
+                    // Add message to chat log and notify all other clients.
+                    else {
+                        request.dateTime = LocalDateTime.now();
+                        Server.chatlog.add(request);
+                        System.out.println(Server.chatlog.size());
+                        Collections.sort(Server.chatlog);
+                        for (RequestHandler thread : Server.threads.keySet()) {
+                            thread.objectOutputStream().writeObject(Server.chatlog);
+                        }
+                    }
+                }*/
+            }
+        }
+        // Socket error, close thread.
+        catch (SocketException e) {
+            System.out.println("Socket error: connection with " + client + " has been terminated.");
+            return;
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        catch (NullPointerException e) {
+            System.out.println(Response.INVALID);
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public ObjectOutputStream objectOutputStream() { return this.out; }
+
+    public ObjectInputStream getIn() { return this.in; }
+}
+/*
+ ** Thread for handling chat functionality.
+ */
+class ChatHandler extends Thread {
+
+    // Socket, input streams, output streams.
+    final Socket client;
+    final DataInputStream in;
+    final DataOutputStream out;
+
+    // Class constructor.
+    public ChatHandler(Socket client, DataInputStream in, DataOutputStream out) {
+        this.client = client;
+        this.in = in;
+        this.out = out;
+    }
+
+    // Overrides default run method.
+    @Override
+    public synchronized void run() {
+        try {
+            String requestJSON;
+            TextRequest request = null;
+            while (true) {
+
                 // Receive request (a JSON string) from client and convert it to a TextRequest Object.
                 requestJSON = in.readUTF();
                 System.out.println(requestJSON);
@@ -121,69 +255,55 @@ class TextRequestHandler extends Thread {
                     out.writeUTF(Response.INVALID.name());
                     continue;
                 }
-                Request operation = Request.valueOf(request.operation.toUpperCase());
-
-                if (operation == Request.LOGIN) {
-                    // No username provided or username contains only whitespace character(s).
-                    if (request.user == null || request.user.trim().isEmpty()) {
-                        out.writeUTF(Response.INVALID.name());
-                    }
-                    else {
-                        reply = login(request.user);
-                        System.out.println("reply is " + reply);
-                        out.writeUTF(reply);
-                    }
-                }
+                request.dateTime = LocalDateTime.now();
+                Server.chatlog.add(request);
             }
-            // Socket error, close thread.
-            catch (SocketException e) {
-                System.out.println("Socket error: connection with " + socket + " has been terminated.");
-                return;
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            catch (NullPointerException e) {
-                System.out.println(Response.INVALID);
-            }
-            catch (Exception e) {
-                System.out.println(e.getMessage());
-                e.printStackTrace();
-            }
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
-    // Handles login request.
-    public synchronized String login(String user) {
 
-        // Create user and initialise their whiteboard as null.
-        if (!Server.users.containsKey(user.toLowerCase())) {
-            Server.users.put(user, null);
-            return (Response.LOGIN_SUCCESS.name());
-
+    // Take a client request (a JSON string) and convert it to a TextRequest object.
+    public static TextRequest parseRequest(String requestJSON) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            TextRequest request = mapper.readValue(requestJSON, TextRequest.class);
+            return request;
         }
-
-        // Chosen username already exists.
-        System.out.println("taken");
-        return (Response.USERNAME_TAKEN.name());
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }
+
 
 /*
  ** Representation of a given client text-based request.
  */
-class TextRequest {
+class TextRequest
+        implements Comparable<TextRequest>, Serializable {
     public String operation;
     public String user;
     public String message;
+    public LocalDateTime dateTime;
 
     // Class constructor.
     public TextRequest(String operation, String user, String message) {
         this.operation = operation;
         this.user = user;
         this.message = message;
+        dateTime = LocalDateTime.now();
     }
 
     // Default constructor.
     public TextRequest() {
+    }
+
+    @Override
+    public int compareTo(TextRequest o) {
+        return this.dateTime.compareTo(o.dateTime);
     }
 }
