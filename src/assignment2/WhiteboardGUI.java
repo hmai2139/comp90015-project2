@@ -91,12 +91,10 @@ public class WhiteboardGUI {
         // Initialise whiteboard.
         initialise(manager, user, name);
 
-        // Send a chat message.
+        // Broadcast message from server to clients.
         chatField.addActionListener(e -> {
             String message = chatField.getText();
-            Server.chatlog.add(new Message(Request.CHAT.name(), user, message));
-            System.out.println(Server.chatlog.size());
-            logArea.append(localDateTime() + user + ": " + message + "\n");
+            ChatHandler.chat(message);
             chatField.setText("");
         });
     }

@@ -124,7 +124,6 @@ public class Client {
 
         // Infinite loop to handle communication between client and server's client handler.
         while (true) {
-
             // Get reply from client handler.
             String replyJSON = dataInputStream.readUTF();
             Message reply = ChatHandler.parseRequest(replyJSON);
@@ -148,11 +147,10 @@ public class Client {
 
     // Submits chat request.
     public void chat(String user, String message) {
-        String requestJSON = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
+        String chatMessage = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
                 Request.CHAT.name(), user, message);
         try {
-            dataOutputStream.writeUTF(requestJSON);
-            //return (ArrayList<TextRequest>) objectInputStream.readObject();
+            dataOutputStream.writeUTF(chatMessage);
         }
         catch (Exception e) {
             e.printStackTrace();

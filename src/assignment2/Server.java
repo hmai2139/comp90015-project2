@@ -241,32 +241,24 @@ class ChatHandler extends Thread {
     @Override
     public synchronized void run() {
         try {
-            String requestJSON;
-            Message request;
+            String chatMessage;
+            Message chat;
 
             while (true) {
 
                 // Receive request (a JSON string) from client and convert it to a TextRequest Object.
-                requestJSON = in.readUTF();
-                System.out.println(requestJSON);
-                request = parseRequest(requestJSON);
+                chatMessage = in.readUTF();
+                System.out.println(chatMessage);
+                chat = parseRequest(chatMessage);
 
                 // Empty request.
-                if (request == null) {
+                if (chat == null) {
                     out.writeUTF(Response.INVALID.name());
                     continue;
                 }
-                request.dateTime = LocalDateTime.now();
-                Server.chatlog.add(request);
-                Server.gui.logArea().append(
-                        Server.gui.localDateTime(request.dateTime) + request.user + ": " + request.message + "\n");
 
                 // Broadcast new message to other clients.
-                for (ChatHandler thread: Server.chatThreads.keySet()) {
-                    if (!Server.chatThreads.get(thread).equals(request.user)){
-                        thread.out().writeUTF(requestJSON);
-                    }
-                }
+                broadcast(chatMessage);
             }
         }
         catch (SocketException e) {
@@ -288,6 +280,43 @@ class ChatHandler extends Thread {
         catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static void chat(String message) {
+        String chatMessage = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
+                Request.CHAT.name(), Server.MANAGER, message);
+        try {
+            Message chat = parseRequest(chatMessage);
+            chat.dateTime = LocalDateTime.now();
+
+            // Broadcast new message to other clients.
+            broadcast(chatMessage);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void broadcast(String chatMessage) {
+        Message chat = parseRequest(chatMessage);
+
+        // Add message to server chat log.
+        chat.dateTime = LocalDateTime.now();
+        Server.chatlog.add(chat);
+        Server.gui.logArea().append(
+                Server.gui.localDateTime(chat.dateTime) + chat.user + ": " + chat.message + "\n");
+
+        // Broadcast to all other clients.
+        for (ChatHandler thread: Server.chatThreads.keySet()) {
+            if (!Server.chatThreads.get(thread).equals(chat.user)){
+                try {
+                    thread.out().writeUTF(chatMessage);
+                }
+                catch (IOException exception) {
+                    exception.printStackTrace();
+                }
+            }
         }
     }
 
