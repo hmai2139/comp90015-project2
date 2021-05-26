@@ -33,8 +33,8 @@ public class Canvas extends JComponent
     // Default colour.
     private Color colour = Color.BLACK;
 
-    // Default text font.
-    private Font font = new Font("Arial", Font.PLAIN, 14);
+    // Default stroke size.
+    private int stroke = 2;
 
     // Default insert mode.
     private Mode mode = Mode.LINE;
@@ -94,11 +94,19 @@ public class Canvas extends JComponent
 
                         // New shape drawn by client, send it to server.
                         if (client != null) {
-
+                            client.sendShape(user, mode.name(),
+                                    Integer.toString(pointStart.x), Integer.toString(pointStart.y),
+                                    Integer.toString(pointEnd.x), Integer.toString(pointEnd.y),
+                                    Integer.toString(colour.getRGB()));
                         }
 
-                        // New shape drawn by server, broadcast it.
+                        // New shape drawn by server, add to server canvas and broadcast it to clients.
                         else {
+                            Server.canvas.addShape(styledShape);
+                            ClientHandler.broadcastShape(ClientHandler.sendShape(
+                                    Integer.toString(pointStart.x), Integer.toString(pointStart.y),
+                                    Integer.toString(pointEnd.x), Integer.toString(pointEnd.y),
+                                    Integer.toString(colour.getRGB())));
                         }
                     }
 
@@ -122,44 +130,46 @@ public class Canvas extends JComponent
     }
 
     // Drawing logic.
-    public void paint(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g;
+    public void paint(Graphics graphics) {
+
+        Graphics2D graphics2D = (Graphics2D) graphics;
 
         // Anti-aliasing to produce cleaner drawing.
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         // Whether to draw grid based on user's instruction.
-        if (this.grid) { drawGrid(g2); }
+        if (this.grid) { drawGrid(graphics2D); }
 
         // Set stroke size.
-        g2.setStroke(new BasicStroke(2));
+        graphics2D.setStroke(new BasicStroke(stroke));
 
         // Set alpha (transparency) value of shape preview.
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+        graphics2D.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
 
         // Draw all shapes.
         for (StyledShape shape: shapes) {
-            g2.setPaint(shape.colour());
-            g2.draw(shape.shape());
+            graphics2D.setPaint(shape.getColour());
+            graphics2D.draw(shape.getShape());
         }
 
         // Draw all texts.
         for (StyledText text: texts) {
-            g.setColor(text.colour());
-            g.drawString(text.text(), text.point().x, text.point().y + g.getFontMetrics().getAscent());
+            graphics.setColor(text.getColour());
+            graphics.drawString(
+                    text.getText(), text.getPoint().x, text.getPoint().y + graphics.getFontMetrics().getAscent());
         }
 
         // Show shape preview before drawing.
         if (pointStart != null && pointEnd != null) {
-            g2.setPaint(Color.LIGHT_GRAY);
+            graphics2D.setPaint(Color.LIGHT_GRAY);
             Shape shape = drawShape();
             if (shape != null) {
-                g2.draw(shape);
+                graphics2D.draw(shape);
             }
         }
     }
 
-    private Shape drawShape() {
+    public Shape drawShape() {
 
         switch (mode) {
             case LINE:
@@ -180,33 +190,54 @@ public class Canvas extends JComponent
         return null;
     }
 
+    public Shape drawShape(Mode mode, int x1, int y1, int x2, int y2) {
+
+        switch (mode) {
+            case LINE:
+                return drawLine(x1, y1, x2, y2);
+
+            case CIRCLE:
+                return drawCircle(x1, y1, x2, y2);
+
+            case OVAL:
+                return drawOval(x1, y1, x2, y2);
+
+            case RECTANGLE:
+                return drawRectangle(x1, y1, x2, y2);
+
+            case SQUARE:
+                return drawSquare(x1, y1, x2, y2);
+        }
+        return null;
+    }
+
     // Insert text.
-    void insertText(String text, Point point) {
-        texts.add(new StyledText(text, this.colour, this.font, point));
+    public void insertText(String text, Point point) {
+        texts.add(new StyledText(text, this.colour, point));
     }
 
     // Draw a line.
-    public static Line2D.Float drawLine(int x1, int y1, int x2, int y2) {
+    public Line2D.Float drawLine(int x1, int y1, int x2, int y2) {
         return new Line2D.Float(x1, y1, x2, y2);
     }
 
     // Draw a circle.
-    public static Ellipse2D.Float drawCircle(int x1, int y1, int x2, int y2) {
+    public Ellipse2D.Float drawCircle(int x1, int y1, int x2, int y2) {
         return new Ellipse2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(x1 - x2));
     }
 
     // Draw an oval.
-    public static Ellipse2D.Float drawOval(int x1, int y1, int x2, int y2) {
+    public Ellipse2D.Float drawOval(int x1, int y1, int x2, int y2) {
         return new Ellipse2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2));
     }
 
     // Draw a rectangle.
-    public static Rectangle2D.Float drawRectangle(int x1, int y1, int x2, int y2) {
+    public Rectangle2D.Float drawRectangle(int x1, int y1, int x2, int y2) {
         return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2));
     }
 
     // Draw a square.
-    public static Rectangle2D.Float drawSquare(int x1, int y1, int x2, int y2) {
+    public Rectangle2D.Float drawSquare(int x1, int y1, int x2, int y2) {
         return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(x1 - x2));
     }
 
@@ -238,10 +269,6 @@ public class Canvas extends JComponent
 
     public void setColour(Color colour) { this.colour = colour; }
 
-    public Font font() { return this.font; }
-
-    public void setFont(Font font) { this.font = font; }
-
     public ArrayList<StyledShape> shapes() {
         return this.shapes;
     }
@@ -269,8 +296,6 @@ public class Canvas extends JComponent
     }
 
     public String manager() { return this.manager; }
-
-    public void setManager(String name) { this.manager = manager; }
 
     public String name() { return this.name; }
 

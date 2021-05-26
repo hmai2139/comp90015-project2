@@ -35,6 +35,7 @@ public class WhiteboardGUI {
     private JButton closeButton;
     private JPanel userMenuPanel;
     private JTextArea logArea;
+    private JTextField removeUserField;
     private JPanel userInteractionPanel;
 
     private Canvas canvas;
@@ -65,15 +66,19 @@ public class WhiteboardGUI {
         this.client = client;
         this.chatlog = chatlog;
 
+        // Create a new canvas.
+        canvas = new Canvas(manager, user, name, client);
+        canvasFrame = new JFrame("Canvas");
+        canvasFrame.setTitle(name);
+
         // Initialise whiteboard.
-        initialise(manager, user, name);
+        initialise(manager, user);
 
         // Send a chat message.
         chatField.addActionListener(e -> {
             String message = chatField.getText();
             client.chat(user, message);
             chatlog.add(new Message(Request.CHAT.name(), user, message));
-            System.out.println(chatlog.size());
             logArea.append(localDateTime() + user + ": " + message + "\n");
             chatField.setText("");
         });
@@ -94,8 +99,13 @@ public class WhiteboardGUI {
         this.user = user;
         this.name = name;
 
+        // Create a new canvas.
+        canvas = new Canvas(manager, user, name);
+        canvasFrame = new JFrame("Canvas");
+        canvasFrame.setTitle(name);
+
         // Initialise whiteboard.
-        initialise(manager, user, name);
+        initialise(manager, user);
         managerInitialise();
 
         // Broadcast message from server to clients.
@@ -106,13 +116,9 @@ public class WhiteboardGUI {
         });
     }
 
-    private void initialise(String manager, String user, String name) {
+    private void initialise(String manager, String user) {
         // Get screen size.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-
-        canvas = new Canvas(manager, user, name);
-        canvasFrame = new JFrame("Canvas");
-        canvasFrame.setTitle(name);
 
         // Customise canvas.
         canvas.setBackground(Color.WHITE);
@@ -185,11 +191,8 @@ public class WhiteboardGUI {
 
         // Clear all drawn shapes from canvas.
         newButton.addActionListener(e -> {
-            canvasFrame.remove(canvas);
-            canvas = new Canvas(manager, user, name);
-            canvasFrame.add(canvas);
-            canvasFrame.revalidate();
-            canvasFrame.repaint();
+            canvas.clear();
+            ClientHandler.clearCommand();
         });
 
         // Open an existing canvas from file.
@@ -284,7 +287,7 @@ public class WhiteboardGUI {
     }
 
     // Get underlying Canvas object.
-    public Canvas whiteboard() { return this.canvas; }
+    public Canvas canvas() { return this.canvas; }
 
     // Overwrite canvas details/shapes/texts with received data.
     public void overwrite(Canvas canvas) {

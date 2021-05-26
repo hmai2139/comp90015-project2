@@ -6,7 +6,10 @@
 
 package assignment2;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.*;
 import java.net.BindException;
 import java.net.ServerSocket;
@@ -15,7 +18,6 @@ import java.net.SocketException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 public class Server {
 
@@ -59,7 +61,7 @@ public class Server {
 
         // Create a new canvas and become its manager.
         gui = new WhiteboardGUI(MANAGER, MANAGER, MANAGER);
-        canvas = gui.whiteboard();
+        canvas = gui.canvas();
 
         // Awaiting potential requests from clients.
         while (true) {
@@ -81,40 +83,48 @@ public class Server {
 
                 // Notify incoming client that they have chosen the same name as manager.
                 if (request != null) {
-                    if (request.user().trim().equalsIgnoreCase(MANAGER.trim())) {
+                    if (request.getUser().trim().equalsIgnoreCase(MANAGER.trim())) {
                         dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
                         client.close();
                     }
 
                     else {
-
                         // Notify incoming client that they have chosen the same name as as an existing client.
                         for (Socket socket : clients.keySet()) {
-                            if (clients.get(socket).trim().equalsIgnoreCase(request.user().trim())) {
+                            if (clients.get(socket).trim().equalsIgnoreCase(request.getUser().trim())) {
                                 dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
                                 client.close();
                             }
                         }
-
-                        // Notify incoming client of successful login.
-                        dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
-
-                        // Create Object I/O streams to send/receive Objects to/from client.
-                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
-                        ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
-
-                        // Create new threads to handle requests.
-                        System.out.println("Creating a new thread for the client " + client + "...");
-                        ClientHandler clientHandler = new ClientHandler(client, dataInputStream, dataOutputStream,
-                                objectOutputStream, objectInputStream);
-
-                        // Add client to list of clients.
-                        clients.put(client, request.user());
-                        handlers.put(clientHandler, request.user());
-
-                        // Start the threads.
-                        clientHandler.start();
                     }
+
+                    // Notify manager of join request.
+                    int result = showJoinDialog(request.getUser());
+
+                    if (result == JOptionPane.YES_OPTION) {
+                        dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
+                    }
+
+                    else if (result == JOptionPane.NO_OPTION) {
+                        dataOutputStream.writeUTF(Response.JOIN_DECLINED.name());
+                        client.close();
+                    }
+
+                    // Create Object I/O streams to send/receive Objects to/from client.
+                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+                    ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
+
+                    // Create new threads to handle requests.
+                    System.out.println("Creating a new thread for the client " + client + "...");
+                    ClientHandler clientHandler = new ClientHandler(client, dataInputStream, dataOutputStream,
+                            objectOutputStream, objectInputStream);
+
+                    // Add client to list of clients.
+                    clients.put(client, request.getUser());
+                    handlers.put(clientHandler, request.getUser());
+
+                    // Start the threads.
+                    clientHandler.start();
                 }
             }
             catch (BindException e) {
@@ -132,135 +142,73 @@ public class Server {
             }
         }
     }
+
+    // Display user login request message.
+    public synchronized static int showJoinDialog(String user) {
+
+        JFrame frame = new JFrame(user + "would like to join your whiteboard.");
+        JOptionPane optionPane = new JOptionPane(user + " would like to join your whiteboard.",
+                JOptionPane.QUESTION_MESSAGE,
+                JOptionPane.YES_NO_OPTION);
+
+        // Show join request dialog.
+        final JDialog joinDialog = new JDialog(frame, "Allow user to join?", true);
+        joinDialog.setContentPane(optionPane);
+        joinDialog.setDefaultCloseOperation(
+                JDialog.DO_NOTHING_ON_CLOSE);
+
+        // Prevent manager from closing the dialog without pressing either Yes/No.
+        joinDialog.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent we) {
+                joinDialog.setTitle("Please accept or decline.");
+            }
+        });
+        optionPane.addPropertyChangeListener(e -> {
+            String prop = e.getPropertyName();
+            if (joinDialog.isVisible()
+                    && (e.getSource() == optionPane)
+                    && (prop.equals(JOptionPane.VALUE_PROPERTY))) {
+                joinDialog.setVisible(false);
+            }
+        });
+
+        // Set dialog on top and request focus so manager can easily see join request.
+        joinDialog.pack();
+        joinDialog.setLocationRelativeTo(null);
+        joinDialog.toFront();
+        joinDialog.setAlwaysOnTop(true);
+        joinDialog.requestFocus();
+        joinDialog.setVisible(true);
+
+        return (Integer) optionPane.getValue();
+    }
 }
 
 /*
- ** Thread for handling clients' requests.
+ ** JSON-convertible representation of a message between server and clients.
  */
-class ClientHandler extends Thread {
-
-    final Socket client;
-    final DataInputStream dataInputStream;
-    final DataOutputStream dataOutputStream;
-    final ObjectOutputStream objectOutputStream;
-    final ObjectInputStream objectInputStream;
-
-    public ClientHandler(Socket client,
-                         DataInputStream dataInputStream, DataOutputStream dataOutputStream,
-                         ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream) {
-        this.client = client;
-        this.dataInputStream = dataInputStream;
-        this.dataOutputStream = dataOutputStream;
-        this.objectOutputStream = objectOutputStream;
-        this.objectInputStream = objectInputStream;
-    }
-
-    @Override
-    public synchronized void run() {
-        try {
-            // Send current canvas data to client.
-            objectOutputStream.writeObject(Server.canvas);
-
-            // Send current chat log to client.
-            objectOutputStream.writeObject(Server.chatlog);
-
-            String chatMessage;
-            Message chat;
-
-            while (true) {
-
-                // Receive request (a JSON string) from client and convert it to a TextRequest Object.
-                chatMessage = dataInputStream.readUTF();
-                System.out.println(chatMessage);
-                chat = parseRequest(chatMessage);
-
-                // Empty request.
-                if (chat == null) {
-                    dataOutputStream.writeUTF(Response.INVALID.name());
-                    continue;
-                }
-
-                // Broadcast new message to other clients.
-                broadcast(chatMessage);
-            }
-        }
-        catch (SocketException e) {
-            System.out.println("Socket error: connection with " + client + " has been terminated.");
-        }
-        catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    // Take a client request (a JSON string) and convert it to a Message object.
-    public static Message parseRequest(String requestJSON) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(requestJSON, Message.class);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // Chat functionality for manager.
-    public synchronized static void chat(String message) {
-        String chatMessage = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
-                Request.CHAT.name(), Server.MANAGER, message);
-        try {
-            Message chat = parseRequest(chatMessage);
-            if (chat != null) {
-                chat.setDateTime(LocalDateTime.now());
-            }
-
-            // Broadcast new message to other clients.
-            broadcast(chatMessage);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Broadcast chat functionality for manager.
-    public synchronized static void broadcast(String chatMessage) {
-        Message chat = parseRequest(chatMessage);
-
-        // Add message to server chat log.
-        chat.setDateTime((LocalDateTime.now()));
-        Server.chatlog.add(chat);
-        Server.gui.logArea().append(
-                Server.gui.localDateTime(chat.dateTime()) + chat.user() + ": " + chat.message() + "\n");
-
-        // Broadcast to all other clients.
-        for (ClientHandler thread: Server.handlers.keySet()) {
-            if (!Server.handlers.get(thread).equals(chat.user())){
-                try {
-                    thread.out().writeUTF(chatMessage);
-                }
-                catch (IOException exception) {
-                    exception.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public DataInputStream in() { return this.dataInputStream; }
-
-    public DataOutputStream out() { return this.dataOutputStream; }
-}
-
-/*
- ** Representation of a text message between server and clients.
- */
+@JsonIgnoreProperties(ignoreUnknown = true)
 class Message implements Comparable<Message>, Serializable {
+
+    // Attributes for chat request.
     private String operation;
     private String user;
     private String message;
-    //private String
+
+    // Additional attribute for insert text request.
+    private String text;
+    private String x1;
+    private String y1;
+    private String colour;
+
+    // Additional attribute for draw shape request.
+    private String shape;
+    private String x2;
+    private String y2;
+
     private LocalDateTime dateTime;
 
+    // Constructor for chat request.
     public Message(String operation, String user, String message) {
         this.operation = operation;
         this.user = user;
@@ -268,18 +216,59 @@ class Message implements Comparable<Message>, Serializable {
         dateTime = LocalDateTime.now();
     }
 
+    // Constructor for insert text request.
+    public Message(String operation, String user, String text, String x1, String y1, String colour) {
+        this.operation = operation;
+        this.user = user;
+        this.text = text;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.colour = colour;
+    }
+
+    // Constructor for draw shape request.
+    public Message(String operation, String user ,
+                   String x1, String y1, String colour,
+                   String shape, String x2, String y2) {
+        this.operation = operation;
+        this.user = user;
+        this.x1 = x1;
+        this.y1 = y1;
+        this.colour = colour;
+        this.shape = shape;
+        this.x2 = x2;
+        this.y2 = y2;
+        dateTime = LocalDateTime.now();
+    }
+
+    public Message() { }
+
     @Override
     public int compareTo(Message o) {
         return this.dateTime.compareTo(o.dateTime);
     }
 
-    public String operation() { return this.operation; }
+    public String getOperation() { return this.operation; }
 
-    public String user() { return this.user; }
+    public String getUser() { return this.user; }
 
-    public LocalDateTime dateTime() { return this.dateTime; }
+    public String getMessage() { return this.message; }
 
-    public String message() { return this.message; }
+    public String getText() { return this.text; }
+
+    public String getX1() { return this.x1; }
+
+    public String getY1() { return this.y1; }
+
+    public String getColour() { return this.colour; }
+
+    public String getShape() { return this.shape; }
+
+    public String getX2() { return this.x2; }
+
+    public String getY2() { return this.y2; }
+
+    public LocalDateTime getDateTime() { return this.dateTime; }
 
     public void setDateTime(LocalDateTime dateTime) { this.dateTime = dateTime; }
 }

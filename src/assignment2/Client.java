@@ -40,6 +40,8 @@ public class Client {
 
             // Submit username to server for authorisation.
             String response = Client.login(USER, dataInputStream, dataOutputStream);
+
+            // Username already exists.
             if (response.equals(Response.USERNAME_TAKEN.name())) {
                 Client.showErrorPanel("Please restart client and choose another name.", "Username already exists");
                 System.out.println("Username already exists. Please restart client and choose another name.");
@@ -47,24 +49,22 @@ public class Client {
                 System.exit(-1);
             }
 
+            // Manager has declined join request.
+            else if (response.equals(Response.JOIN_DECLINED.name())) {
+                Client.showErrorPanel("The manager has declined your join request :(.", "Request declined.");
+                System.out.println("Connection with server has been terminated. Exiting...");
+                System.exit(-1);
+            }
+
             // Authorisation is successful.
             else {
+                System.out.println("Request to join has been accepted. Loading whiteboard...");
+
                 // Obtaining Object I/O streams to send/receive Objects to/from server.
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(server.getOutputStream());
                 ObjectInputStream objectInputStream = new ObjectInputStream(server.getInputStream());
 
-                Client client = new Client(USER, server, dataInputStream, dataOutputStream,
-                        objectOutputStream, objectInputStream);
-
-                /*// Infinite loop to handle communication between client and server's client handler.
-                while (true) {
-
-                    // Get reply from client handler.
-                    String replyJSON = dataInputStream.readUTF();
-                    Message reply = ChatHandler.parseRequest(replyJSON);
-                    gui.logArea().append(gui.localDateTime(reply.dateTime) + reply.user + ": " + reply.message + "\n");
-                    System.out.println(replyJSON);
-                }*/
+                new Client(USER, server, dataInputStream, dataOutputStream, objectOutputStream, objectInputStream);
             }
         }
 
@@ -110,8 +110,6 @@ public class Client {
         // Obtain canvas data and chat log from server.
         Canvas fromServer = (Canvas) objectInputStream.readObject();
         chatlog = (ArrayList<Message>) objectInputStream.readObject();
-        System.out.println(chatlog.size());
-
         // Extract needed data and create own canvas.
         Canvas canvas = new Canvas(fromServer.manager(), user, fromServer.name());
         canvas.setShapes(fromServer.shapes());
@@ -122,8 +120,9 @@ public class Client {
         this.gui.overwrite(canvas);
 
         // Display chat log to-date.
-        for (Message chat: chatlog) {
-            this.gui.logArea().append(gui.localDateTime(chat.dateTime()) + chat.user() + ": " + chat.message() + "\n");
+        for (Message chat : chatlog) {
+            gui.logArea().append(
+                    gui.localDateTime(chat.getDateTime()) + chat.getUser() + ": " + chat.getMessage() + "\n");
         }
 
         // Infinite loop to handle communication between client and server's client handler.
@@ -131,8 +130,46 @@ public class Client {
             // Get reply from client handler.
             String replyJSON = dataInputStream.readUTF();
             Message reply = ClientHandler.parseRequest(replyJSON);
-            gui.logArea().append(gui.localDateTime() + reply.user() + ": " + reply.message() + "\n");
             System.out.println(replyJSON);
+
+            // Valid reply.
+            if (reply != null) {
+
+                // Server sent a chat message.
+                if (reply.getOperation().equals(Request.CHAT.name())) {
+                    gui.logArea().append(gui.localDateTime() + reply.getUser() + ": " + reply.getMessage() + "\n");
+                }
+
+                // Server sent a new shape.
+                else if (reply.getOperation().equals(Request.SHAPE.name())) {
+
+                    // Construct shape and add to canvas.
+                    Shape shape = canvas.drawShape(Mode.valueOf(reply.getShape()),
+                            Integer.parseInt(reply.getX1()), Integer.parseInt(reply.getY1()),
+                            Integer.parseInt(reply.getX2()), Integer.parseInt(reply.getY2())
+                            );
+                    StyledShape styledShape =
+                            new StyledShape(shape, new Color(Integer.parseInt(reply.getColour())));
+                    gui.canvas().addShape(styledShape);
+                }
+
+                // Server sent a new text.
+                else if (reply.getOperation().equals(Request.TEXT.name())) {
+
+                    // Construct text and add to canvas.
+                    String text = reply.getText();
+                    int x1 = Integer.parseInt(reply.getX1());
+                    int y1 = Integer.parseInt(reply.getY1());
+                    Color colour = new Color(Integer.parseInt(reply.getColour()));
+                    StyledText styledText = new StyledText(text, colour, new Point(x1, y1));
+                    gui.canvas().addText(styledText);
+                }
+
+                // Server sent a clear canvas command.
+                else if (reply.getOperation().equals(Response.CLEAR.name())) {
+                    gui.canvas().clear();
+                }
+            }
         }
     }
 
@@ -151,13 +188,42 @@ public class Client {
 
     // Submits chat request.
     public void chat(String user, String message) {
-        String chatMessage = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
+        String request = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"}",
                 Request.CHAT.name(), user, message);
         try {
-            dataOutputStream.writeUTF(chatMessage);
+            dataOutputStream.writeUTF(request);
         }
         catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("Cannot send chat message.");
+        }
+    }
+
+    // Submits shape draw request.
+    public void sendShape(String user, String mode, String x1, String y1, String x2, String y2, String colour) {
+        String request = String.format("{\"operation\": \"%s\", \"user\": \"%s\"," +
+                         "\"shape\": \"%s\", \"x1\": \"%s\", \"y1\": \"%s\"," +
+                         " \"x2\": \"%s\", \"y2\": \"%s\", \"colour\": \"%s\"}",
+                Request.SHAPE.name(), user, mode, x1, y1, x2, y2, colour);
+        try {
+            dataOutputStream.writeUTF(request);
+        }
+        catch (Exception e) {
+            System.out.println("Insert shape request failed. Please check connection with server.");
+        }
+    }
+
+    // Submits text insert request.
+    public void text(String user, String text, String x1, String y1, String colour) {
+        String request = String.format(
+                "{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"," +
+                        "\"x1\": \"%s\", \"y1\": \"%s\"," +
+                        "\"colour\": \"%s\"}}",
+                Request.TEXT.name(), "", user, x1, y1, colour);
+        try {
+            dataOutputStream.writeUTF(request);
+        }
+        catch (Exception e) {
+            System.out.println("Insert text request failed. Please check connection with server.");
         }
     }
 
