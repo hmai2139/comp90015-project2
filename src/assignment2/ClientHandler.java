@@ -216,6 +216,8 @@ public class ClientHandler extends Thread {
         );
         StyledShape styledShape =
                 new StyledShape(shape, new Color(Integer.parseInt(message.getColour())));
+
+        // Add shape from client to server canvas.
         Server.canvas.addShape(styledShape);
 
         // Broadcast to other clients.

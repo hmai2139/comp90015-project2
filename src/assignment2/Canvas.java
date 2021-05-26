@@ -90,10 +90,10 @@ public class Canvas extends JComponent
                     // If shape is valid, add it to canvas.
                     if (shape != null) {
                         StyledShape styledShape = new StyledShape(shape, colour);
-                        shapes.add(styledShape);
 
                         // New shape drawn by client, send it to server.
                         if (client != null) {
+                            addShape(styledShape);
                             client.sendShape(user, mode.name(),
                                     Integer.toString(pointStart.x), Integer.toString(pointStart.y),
                                     Integer.toString(pointEnd.x), Integer.toString(pointEnd.y),
@@ -102,7 +102,6 @@ public class Canvas extends JComponent
 
                         // New shape drawn by server, add to server canvas and broadcast it to clients.
                         else {
-                            Server.canvas.addShape(styledShape);
                             ClientHandler.broadcastShape(ClientHandler.sendShape(
                                     Integer.toString(pointStart.x), Integer.toString(pointStart.y),
                                     Integer.toString(pointEnd.x), Integer.toString(pointEnd.y),
