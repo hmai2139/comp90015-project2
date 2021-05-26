@@ -17,6 +17,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
@@ -137,10 +139,23 @@ public class Server {
         }
     }
 
+    // Remove user along with their socket and handler.
+    public synchronized static void removeUser(String user) {
+
+        // Remove name.
+        users.remove(user);
+
+        // Remove socket.
+        clients.entrySet().removeIf(client -> user.equals(clients.get(client)));
+
+        // Remove handler.
+        handlers.entrySet().removeIf(handler -> user.equals(handlers.get(handler)));
+    }
+
     // Check if username exists.
-    public synchronized static Boolean userExists(String user) {
-        for (Socket socket : clients.keySet()) {
-            if (clients.get(socket).trim().equalsIgnoreCase(user.trim())) {
+    public synchronized static Boolean userExists(String newUser) {
+        for (String user : users) {
+            if (user.trim().equalsIgnoreCase(newUser.trim())) {
                 return true;
             }
         }

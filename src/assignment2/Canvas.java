@@ -43,10 +43,10 @@ public class Canvas extends JComponent
     private Boolean grid = false;
 
     // Canvas manager.
-    private String manager;
+    private final String manager;
 
     // Canvas current user.
-    private String user;
+    private final String user;
 
     // Canvas filename, to be used in Save/Save As operations.
     private String name;
@@ -261,15 +261,15 @@ public class Canvas extends JComponent
         repaint();
     }
 
-    public Mode mode() { return this.mode; }
+    public Mode getMode() { return this.mode; }
 
     public void setMode(Mode mode) { this.mode = mode; }
 
-    public Color colour() { return this.colour; }
+    public Color getColour() { return this.colour; }
 
     public void setColour(Color colour) { this.colour = colour; }
 
-    public ArrayList<StyledShape> shapes() {
+    public ArrayList<StyledShape> getShapes() {
         return this.shapes;
     }
 
@@ -283,7 +283,7 @@ public class Canvas extends JComponent
         repaint();
     }
 
-    public ArrayList<StyledText> texts() { return this.texts; }
+    public ArrayList<StyledText> getTexts() { return this.texts; }
 
     public void setTexts(ArrayList<StyledText> texts) {
         this.texts = texts;
@@ -295,11 +295,15 @@ public class Canvas extends JComponent
         repaint();
     }
 
-    public String manager() { return this.manager; }
+    public String getManager() { return this.manager; }
+
+    public String getUser() { return this.user; }
 
     public String name() { return this.name; }
 
     public void setName(String name) { this.name = name; }
+
+    public Client getClient() { return this.client; }
 
     // Clear canvas.
     public void clear() {

@@ -92,6 +92,7 @@ public class WhiteboardGUI {
             saveAsButton.setEnabled(false);
             closeButton.setEnabled(false);
             removeUserField.setEnabled(false);
+            userSelection.setEnabled(false);
         }
 
         // Client leaves whiteboard.
@@ -150,7 +151,7 @@ public class WhiteboardGUI {
         canvasFrame.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
         canvasFrame.setLocation(5, screenSize.height/20);
         canvasFrame.add(canvas);
-        colourButton.setBackground(canvas.colour());
+        colourButton.setBackground(canvas.getColour());
         canvasFrame.setVisible(true);
 
         // Whiteboard GUI's initialisation and customisations.
@@ -172,7 +173,7 @@ public class WhiteboardGUI {
         // Insert text at the location of user's cursor.
         canvas.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
-                if (canvas.mode() != Mode.TEXT) {
+                if (canvas.getMode() != Mode.TEXT) {
                     return;
                 }
                 // Focus on the clicked text field.
@@ -198,7 +199,7 @@ public class WhiteboardGUI {
 
         // Select a colour and update current colour indicator.
         colourButton.addActionListener(e -> {
-            Color colour = canvas.colour();
+            Color colour = canvas.getColour();
             colour = JColorChooser.showDialog(controlFrame, "Select a colour", colour);
             if (colour != null) {
                 canvas.setColour(colour);
@@ -241,8 +242,8 @@ public class WhiteboardGUI {
                     Canvas opened = (Canvas) objectInputStream.readObject();
 
                     canvas.clear();
-                    canvas.setShapes(opened.shapes());
-                    canvas.setTexts(opened.texts());
+                    canvas.setShapes(opened.getShapes());
+                    canvas.setTexts(opened.getTexts());
                     canvas.setName(opened.name());
                     canvasFrame.setTitle(file.getName());
 
@@ -333,7 +334,18 @@ public class WhiteboardGUI {
 
         // Kick user listener.
         removeUserField.addActionListener(e -> {
-            ClientHandler.kick(removeUserField.getText());
+            String user = removeUserField.getText();
+            if (user.equals(manager)) {
+                Client.showErrorPanel("Can't kick yourself or another manager.", "Insufficient authority");
+            }
+            else {
+                if (!Server.users.contains(user)) {
+                    Client.showErrorPanel("No such user.", "Invalid command");
+                }
+                else {
+                    ClientHandler.kick(user);
+                }
+            }
             removeUserField.setText("");
         });
     }
@@ -343,15 +355,15 @@ public class WhiteboardGUI {
 
     // Overwrite canvas details/shapes/texts with received data.
     public void overwrite(Canvas canvas) {
-        this.canvas.setShapes(canvas.shapes());
-        this.canvas.setTexts(canvas.texts());
+        this.canvas.setShapes(canvas.getShapes());
+        this.canvas.setTexts(canvas.getTexts());
         this.canvas.setName(canvas.name());
         canvasFrame.setTitle(canvas.name());
     }
 
     public JTextArea getLogArea() { return this.logArea; }
 
-    public JList getActiveUserList() { return this.activeUserList; };
+    public JList getActiveUserList() { return this.activeUserList; }
 
     // Get local date and time.
     public String localDateTime() {

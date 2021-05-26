@@ -1,3 +1,8 @@
+/**
+ * @author Hoang Viet Mai, vietm@student.unimelb.edu.au, 813361.
+ * COMP90015 S1 2021, Assignment 2, Distributed Whiteboard System.
+ * This class is used to insert text on Canvas.
+ */
 package assignment2;
 
 import java.awt.*;
@@ -7,7 +12,9 @@ import javax.swing.event.*;
 
 public class TextField extends JTextField
         implements ActionListener, FocusListener, MouseListener, DocumentListener {
+
     private Canvas canvas;
+
     public TextField(Canvas canvas) {
         this.canvas = canvas;
         setOpaque(false);
@@ -25,6 +32,23 @@ public class TextField extends JTextField
     //  When user finishes typing, delete this field from canvas and draw the text.
     public void focusLost(FocusEvent e) {
         canvas.insertText(getText(), getLocation());
+
+        // Server inserted a new text.
+        if (canvas.getClient() == null) {
+            ClientHandler.broadcast(ClientHandler.sendText(getText(),
+                    Integer.toString(getLocation().x),
+                    Integer.toString(getLocation().y),
+                    Integer.toString(canvas.getColour().getRGB())));
+        }
+
+        // Client sent a new text.
+        else {
+            canvas.getClient().sendText(canvas.getUser(), getText(),
+                    Integer.toString(getLocation().x),
+                    Integer.toString(getLocation().y),
+                    Integer.toString(canvas.getColour().getRGB()));
+        }
+
         setEditable(false);
         setBorder(null);
         setText("");

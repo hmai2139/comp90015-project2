@@ -12,7 +12,6 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 public class ClientHandler extends Thread {
 
@@ -79,7 +78,7 @@ public class ClientHandler extends Thread {
                     // Broadcast a client's leaving to clients.
                     else if (message.getOperation().equals(Request.LEAVE.name())) {
                         broadcastLeave(messageJSON);
-                        Server.users.remove(message.getUser());
+                        Server.removeUser(message.getUser());
                         Server.gui.getActiveUserList().setListData(Server.users.toArray());
                     }
                 }
@@ -125,11 +124,19 @@ public class ClientHandler extends Thread {
     }
 
     // Construct draw shape request JSON string to broadcast to clients.
-    public static String sendShape(String x1, String y1, String x2, String y2, String colour) {
-        return  String.format("{\"operation\": \"%s\", \"user\": \"%s\"," +
+    public synchronized static String sendShape(String x1, String y1, String x2, String y2, String colour) {
+        return String.format("{\"operation\": \"%s\", \"user\": \"%s\"," +
                         "\"shape\": \"%s\", \"x1\": \"%s\", \"y1\": \"%s\"," +
                         " \"x2\": \"%s\", \"y2\": \"%s\", \"colour\": \"%s\"}",
-                Request.SHAPE.name(), Server.MANAGER, Server.canvas.mode(), x1, y1, x2, y2, colour);
+                Request.SHAPE.name(), Server.MANAGER, Server.canvas.getMode(), x1, y1, x2, y2, colour);
+    }
+
+    // Construct insert text request JSON string to broadcast to clients.
+    public synchronized static String sendText(String text, String x1, String y1, String colour) {
+        return String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"text\": \"%s\","
+                        + "\"x1\": \"%s\", \"y1\": \"%s\","
+                        + "\"colour\": \"%s\"}}",
+                Request.TEXT.name(), Server.MANAGER, text, x1, y1, colour);
     }
 
     // Broadcast a JSON string to clients.
@@ -281,7 +288,8 @@ public class ClientHandler extends Thread {
     public static void kick(String user) {
         String command = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"}",
                 Response.KICKED.name(), Server.MANAGER, user);
-        Server.users.remove(user);
+        //Server.users.remove(user);
+        Server.removeUser(user);
         Server.gui.getActiveUserList().setListData(Server.users.toArray());
         broadcast(command);
     }

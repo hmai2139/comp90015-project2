@@ -114,12 +114,12 @@ public class Client {
         users = (ArrayList<String>) objectInputStream.readObject();
 
         // Extract needed data and create own canvas.
-        Canvas canvas = new Canvas(fromServer.manager(), user, fromServer.name());
-        canvas.setShapes(fromServer.shapes());
-        canvas.setTexts(fromServer.texts());
+        Canvas canvas = new Canvas(fromServer.getManager(), user, fromServer.name());
+        canvas.setShapes(fromServer.getShapes());
+        canvas.setTexts(fromServer.getTexts());
 
         // Initialise GUI with Canvas data from server.
-        this.gui = new WhiteboardGUI(fromServer.manager(), user, fromServer.name(), this, chatlog);
+        this.gui = new WhiteboardGUI(fromServer.getManager(), user, fromServer.name(), this, chatlog);
         this.gui.overwrite(canvas);
 
         // Display chat log to-date.
@@ -179,9 +179,9 @@ public class Client {
                     System.out.println(opened.name());
 
                     // Extract needed data and overwrite canvas.
-                    Canvas newCanvas = new Canvas(opened.manager(), user, opened.name());
-                    newCanvas.setShapes(opened.shapes());
-                    newCanvas.setTexts(opened.texts());
+                    Canvas newCanvas = new Canvas(opened.getManager(), user, opened.name());
+                    newCanvas.setShapes(opened.getShapes());
+                    newCanvas.setTexts(opened.getTexts());
                     this.gui.canvas().clear();
                     this.gui.overwrite(newCanvas);
                 }
@@ -272,9 +272,9 @@ public class Client {
 
     // Submits shape draw request.
     public void sendShape(String user, String mode, String x1, String y1, String x2, String y2, String colour) {
-        String request = String.format("{\"operation\": \"%s\", \"user\": \"%s\"," +
-                         "\"shape\": \"%s\", \"x1\": \"%s\", \"y1\": \"%s\"," +
-                         " \"x2\": \"%s\", \"y2\": \"%s\", \"colour\": \"%s\"}",
+        String request = String.format("{\"operation\": \"%s\", \"user\": \"%s\","
+                        + "\"shape\": \"%s\", \"x1\": \"%s\", \"y1\": \"%s\","
+                        + " \"x2\": \"%s\", \"y2\": \"%s\", \"colour\": \"%s\"}",
                 Request.SHAPE.name(), user, mode, x1, y1, x2, y2, colour);
         try {
             dataOutputStream.writeUTF(request);
@@ -285,12 +285,12 @@ public class Client {
     }
 
     // Submits text insert request.
-    public void text(String user, String text, String x1, String y1, String colour) {
+    public void sendText(String user, String text, String x1, String y1, String colour) {
         String request = String.format(
-                "{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"," +
-                        "\"x1\": \"%s\", \"y1\": \"%s\"," +
-                        "\"colour\": \"%s\"}}",
-                Request.TEXT.name(), "", user, x1, y1, colour);
+                "{\"operation\": \"%s\", \"user\": \"%s\", \"text\": \"%s\","
+                        + "\"x1\": \"%s\", \"y1\": \"%s\","
+                        + "\"colour\": \"%s\"}}",
+                Request.TEXT.name(), user, text, x1, y1, colour);
         try {
             dataOutputStream.writeUTF(request);
         }
@@ -318,6 +318,7 @@ public class Client {
         errorFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         errorFrame.pack();
         errorFrame.setLocationRelativeTo(null);
+        errorFrame.setAlwaysOnTop(true);
         JOptionPane.showMessageDialog(errorFrame, message, error, JOptionPane.ERROR_MESSAGE);
     }
 }
