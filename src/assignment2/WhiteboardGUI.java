@@ -148,7 +148,9 @@ public class WhiteboardGUI {
         // Customise canvas.
         canvas.setBackground(Color.WHITE);
         canvasFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        canvasFrame.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
+        //canvasFrame.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
+        canvasFrame.setMinimumSize(new Dimension(screenSize.width/3, (int) (screenSize.height*0.5)));
+
         canvasFrame.setLocation(5, screenSize.height/20);
         canvasFrame.add(canvas);
         colourButton.setBackground(canvas.getColour());
@@ -158,7 +160,8 @@ public class WhiteboardGUI {
         controlFrame = new JFrame(user + "'s interface");
         controlFrame.setContentPane(panelMain);
         controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        controlFrame.setMinimumSize(new Dimension(screenSize.width / 2,(int) (screenSize.height*0.8)));
+        //controlFrame.setMinimumSize(new Dimension(screenSize.width/2,(int) (screenSize.height*0.8)));
+        controlFrame.setMinimumSize(new Dimension(screenSize.width/3,(int) (screenSize.height*0.5)));
         controlFrame.setLocation(canvasFrame.getX() + canvasFrame.getWidth(), screenSize.height/20);
         controlFrame.pack();
         controlFrame.setVisible(true);
@@ -301,6 +304,8 @@ public class WhiteboardGUI {
                     FileOutputStream fileOutputStream = new FileOutputStream(file);
                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
                     objectOutputStream.writeObject(canvas);
+                    JOptionPane.showMessageDialog(controlFrame, "Saved successfully.",
+                            "Save file", JOptionPane.INFORMATION_MESSAGE);
 
                     fileOutputStream.close();
                     objectOutputStream.close();
@@ -344,6 +349,7 @@ public class WhiteboardGUI {
                 }
                 else {
                     ClientHandler.kick(user);
+                    logArea.append(localDateTime() + user + " has been removed.\n");
                 }
             }
             removeUserField.setText("");

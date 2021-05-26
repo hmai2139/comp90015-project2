@@ -80,6 +80,8 @@ public class ClientHandler extends Thread {
                         broadcastLeave(messageJSON);
                         Server.removeUser(message.getUser());
                         Server.gui.getActiveUserList().setListData(Server.users.toArray());
+                        Server.gui.getLogArea().append(
+                                Server.gui.localDateTime() + message.getUser() + " has left.\n");
                     }
                 }
             }

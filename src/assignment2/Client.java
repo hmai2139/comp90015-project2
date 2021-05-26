@@ -212,6 +212,7 @@ public class Client {
                     else {
                         users.remove(reply.getMessage());
                         gui.getActiveUserList().setListData(users.toArray());
+                        gui.getLogArea().append(gui.localDateTime() + reply.getMessage() + " has been removed.\n");
                     }
                 }
 
@@ -219,12 +220,14 @@ public class Client {
                 else if (reply.getOperation().equals(Response.NEW_JOINED.name())) {
                     users.add(reply.getMessage());
                     gui.getActiveUserList().setListData(users.toArray());
+                    gui.getLogArea().append(gui.localDateTime() + reply.getMessage() + " has joined.\n");
                 }
 
                 // A user left.
                 else if (reply.getOperation().equals(Request.LEAVE.name())) {
                     users.remove(reply.getUser());
                     gui.getActiveUserList().setListData(users.toArray());
+                    gui.getLogArea().append(gui.localDateTime() + reply.getUser() + " has left.\n");
                 }
             }
         }

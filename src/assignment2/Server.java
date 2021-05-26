@@ -113,7 +113,8 @@ public class Server {
                     clients.put(client, request.getUser());
                     handlers.put(clientHandler, request.getUser());
                     users.add(request.getUser());
-                    Server.gui.getActiveUserList().setListData(users.toArray());
+                    gui.getActiveUserList().setListData(users.toArray());
+                    gui.getLogArea().append(gui.localDateTime() + request.getUser() + " has joined.\n");
 
                     // Notify other users.
                     ClientHandler.broadcastJoin(request.getUser());
