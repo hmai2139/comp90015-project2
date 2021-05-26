@@ -103,19 +103,19 @@ public class Client {
         this.objectOutputStream = objectOutputStream;
         this.objectInputStream = objectInputStream;
 
-        // Obtain whiteboard data and chat log from server.
-        Whiteboard fromServer = (Whiteboard) objectInputStream.readObject();
+        // Obtain canvas data and chat log from server.
+        Canvas fromServer = (Canvas) objectInputStream.readObject();
         chatlog = (ArrayList<Message>) objectInputStream.readObject();
         System.out.println(chatlog.size());
 
-        // Extract needed data and create own whiteboard.
-        Whiteboard whiteboard = new Whiteboard(fromServer.manager(), user, fromServer.name());
-        whiteboard.setShapes(fromServer.shapes());
-        whiteboard.setTexts(fromServer.texts());
+        // Extract needed data and create own canvas.
+        Canvas canvas = new Canvas(fromServer.manager(), user, fromServer.name());
+        canvas.setShapes(fromServer.shapes());
+        canvas.setTexts(fromServer.texts());
 
-        // Initialise GUI with Whiteboard data from server.
+        // Initialise GUI with Canvas data from server.
         this.gui = new WhiteboardGUI(fromServer.manager(), user, fromServer.name(), this, chatlog);
-        this.gui.overwrite(whiteboard);
+        this.gui.overwrite(canvas);
 
         // Display chat log to-date.
         for (Message chat: chatlog) {

@@ -26,11 +26,11 @@ public class Server {
     // Chat log.
     public static ArrayList<Message> chatlog = new ArrayList<>();
 
-    // Whiteboard manager.
+    // Canvas manager.
     public static String MANAGER;
 
-    // Whiteboard and whiteboard GUI.
-    public static Whiteboard whiteboard;
+    // Canvas and Whiteboard GUI.
+    public static Canvas canvas;
     public static WhiteboardGUI gui;
 
     public static Server server;
@@ -53,9 +53,9 @@ public class Server {
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("Server started, waiting for connection...");
 
-        // Create a new whiteboard and become its manager.
+        // Create a new canvas and become its manager.
         gui = new WhiteboardGUI(MANAGER, MANAGER, MANAGER);
-        whiteboard = gui.whiteboard();
+        canvas = gui.whiteboard();
 
         // Awaiting potential requests from clients.
         while (true) {
@@ -73,7 +73,7 @@ public class Server {
                 // Check if client's chosen username is unique.
                 String requestJSON = dataInputStream.readUTF();
                 System.out.println(requestJSON);
-                Message request = RequestHandler.parseRequest(requestJSON);
+                Message request = ChatHandler.parseRequest(requestJSON);
 
                 // Same name as manager.
                 if (request.user.trim().equalsIgnoreCase(MANAGER.trim())) {
@@ -126,78 +126,31 @@ public class Server {
 }
 
 /*
- ** Thread for handling clients' requests.
+ ** Thread for handling drawing requests.
  */
 class RequestHandler extends Thread {
 
-    // Socket, input streams, output streams.
     private final Socket client;
     private final ObjectOutputStream out;
     private final ObjectInputStream in;
 
-    // Class constructor.
     public RequestHandler(Socket client, ObjectOutputStream out, ObjectInputStream in) {
         this.client = client;
         this.out = out;
         this.in = in;
     }
 
-    // Take a client request (a JSON string) and convert it to a TextRequest object.
-    public static Message parseRequest(String requestJSON) {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Message request = mapper.readValue(requestJSON, Message.class);
-            return request;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    // Overrides default run method.
     @Override
     public synchronized void run() {
         try {
-            // Send current whiteboard data to client.
-            out.writeObject(Server.whiteboard);
+            // Send current canvas data to client.
+            out.writeObject(Server.canvas);
 
             // Send current chat log to client.
             out.writeObject(Server.chatlog);
 
             while (true) {
-                /*
-                // Receive request (a JSON string) from client and convert it to a TextRequest Object.
-                requestJSON = dataInputStream.readUTF();
-                System.out.println(requestJSON);
-                request = parseRequest(requestJSON);
 
-                // Empty request.
-                if (request == null) {
-                    dataOutputStream.writeUTF(Response.INVALID.name());
-                    continue;
-                }
-                Request operation = Request.valueOf(request.operation.toUpperCase());
-
-                // Handle chat request.
-                if (operation == Request.CHAT) {
-
-                    // Empty message.
-                    if (request.message == null || request.message.trim().equals("")) {
-                        dataOutputStream.writeUTF(Response.INVALID.name());
-                    }
-
-                    // Add message to chat log and notify all other clients.
-                    else {
-                        request.dateTime = LocalDateTime.now();
-                        Server.chatlog.add(request);
-                        System.out.println(Server.chatlog.size());
-                        Collections.sort(Server.chatlog);
-                        for (RequestHandler thread : Server.threads.keySet()) {
-                            thread.objectOutputStream().writeObject(Server.chatlog);
-                        }
-                    }
-                }*/
             }
         }
         // Socket error, close thread.
@@ -218,26 +171,23 @@ class RequestHandler extends Thread {
 
     public ObjectOutputStream objectOutputStream() { return this.out; }
 
-    public ObjectInputStream getIn() { return this.in; }
+    public ObjectInputStream objectInputStream() { return this.in; }
 }
 /*
  ** Thread for handling chat functionality.
  */
 class ChatHandler extends Thread {
 
-    // Socket, input streams, output streams.
     final Socket client;
     final DataInputStream in;
     final DataOutputStream out;
 
-    // Class constructor.
     public ChatHandler(Socket client, DataInputStream in, DataOutputStream out) {
         this.client = client;
         this.in = in;
         this.out = out;
     }
 
-    // Overrides default run method.
     @Override
     public synchronized void run() {
         try {
@@ -270,7 +220,7 @@ class ChatHandler extends Thread {
         }
     }
 
-    // Take a client request (a JSON string) and convert it to a TextRequest object.
+    // Take a client request (a JSON string) and convert it to a Message object.
     public static Message parseRequest(String requestJSON) {
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -283,7 +233,7 @@ class ChatHandler extends Thread {
         }
     }
 
-    public static void chat(String message) {
+    public synchronized static void chat(String message) {
         String chatMessage = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
                 Request.CHAT.name(), Server.MANAGER, message);
         try {
@@ -298,7 +248,7 @@ class ChatHandler extends Thread {
         }
     }
 
-    public static void broadcast(String chatMessage) {
+    public synchronized static void broadcast(String chatMessage) {
         Message chat = parseRequest(chatMessage);
 
         // Add message to server chat log.

@@ -32,9 +32,9 @@ public class WhiteboardGUI {
     private JTextArea logArea;
     private JPanel userInteractionPanel;
 
-    private Whiteboard whiteboard;
+    private Canvas canvas;
 
-    // Manager, current user and file name of the underlying Whiteboard object.
+    // Manager, current user and file name of the underlying Canvas object.
     private String manager;
     private String user;
     private String name;
@@ -51,7 +51,7 @@ public class WhiteboardGUI {
     private ArrayList<Message> chatlog;
 
     // GUI's canvas frame.
-    private JFrame canvas;
+    private JFrame canvasFrame;
 
     // GUI's control frame.
     private JFrame controlFrame;
@@ -103,25 +103,25 @@ public class WhiteboardGUI {
         // Get screen size.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-        whiteboard = new Whiteboard(manager, user, name);
-        canvas = new JFrame("Canvas");
-        canvas.setTitle(name);
+        canvas = new Canvas(manager, user, name);
+        canvasFrame = new JFrame("Canvas");
+        canvasFrame.setTitle(name);
 
         // Customise canvas.
-        whiteboard.setBackground(Color.WHITE);
-        canvas.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        canvas.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
-        canvas.setLocation(5, screenSize.height/20);
-        canvas.add(whiteboard);
-        colourButton.setBackground(whiteboard.colour());
-        canvas.setVisible(true);
+        canvas.setBackground(Color.WHITE);
+        canvasFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        canvasFrame.setMinimumSize(new Dimension(screenSize.width/2, (int) (screenSize.height*0.8)));
+        canvasFrame.setLocation(5, screenSize.height/20);
+        canvasFrame.add(canvas);
+        colourButton.setBackground(canvas.colour());
+        canvasFrame.setVisible(true);
 
         // Whiteboard GUI's initialisation and customisations.
         controlFrame = new JFrame(user + "'s interface");
         controlFrame.setContentPane(panelMain);
         controlFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         controlFrame.setMinimumSize(new Dimension(screenSize.width / 2,(int) (screenSize.height*0.8)));
-        controlFrame.setLocation(canvas.getX() + canvas.getWidth(), screenSize.height/20);
+        controlFrame.setLocation(canvasFrame.getX() + canvasFrame.getWidth(), screenSize.height/20);
         controlFrame.pack();
         controlFrame.setVisible(true);
 
@@ -133,20 +133,20 @@ public class WhiteboardGUI {
         leaveButton.addActionListener(e -> System.exit(0));
 
         // Insert text at the location of user's cursor.
-        whiteboard.addMouseListener(new MouseAdapter() {
+        canvas.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
-                if (whiteboard.mode() != Mode.TEXT) {
+                if (canvas.mode() != Mode.TEXT) {
                     return;
                 }
                 // Focus on the clicked text field.
                 if (e.getClickCount() == 1) {
-                    whiteboard.requestFocusInWindow();
+                    canvas.requestFocusInWindow();
                 }
-                // Create a new text field when user double-clicks on whiteboard.
+                // Create a new text field when user double-clicks on canvas.
                 if (e.getClickCount() == 2) {
-                    TextField textField = new TextField(whiteboard);
+                    TextField textField = new TextField(canvas);
                     textField.setLocation(e.getPoint());
-                    canvas.add(textField);
+                    canvasFrame.add(textField);
                     textField.requestFocusInWindow();
                 }
             }
@@ -156,21 +156,21 @@ public class WhiteboardGUI {
         insertMenu.addActionListener(e -> {
             JComboBox insertMenu = (JComboBox) e.getSource();
             Mode mode = Mode.valueOf((String) insertMenu.getSelectedItem());
-            whiteboard.setMode(mode);
+            canvas.setMode(mode);
         });
 
         // Select a colour and update current colour indicator.
         colourButton.addActionListener(e -> {
-            Color colour = whiteboard.colour();
+            Color colour = canvas.colour();
             colour = JColorChooser.showDialog(controlFrame, "Select a colour", colour);
             if (colour != null) {
-                whiteboard.setColour(colour);
+                canvas.setColour(colour);
                 colourButton.setBackground(colour);
             }
         });
 
         // Switch background.
-        switchBackgroundButton.addActionListener(e -> whiteboard.switchGrid());
+        switchBackgroundButton.addActionListener(e -> canvas.switchGrid());
 
         // -------- Manager-exclusive action listeners -------- //
 
@@ -183,16 +183,16 @@ public class WhiteboardGUI {
             closeButton.setEnabled(false);
         }
 
-        // Clear all drawn shapes from whiteboard.
+        // Clear all drawn shapes from canvas.
         newButton.addActionListener(e -> {
-            canvas.remove(whiteboard);
-            whiteboard = new Whiteboard(manager, user, name);
-            canvas.add(whiteboard);
-            canvas.revalidate();
-            canvas.repaint();
+            canvasFrame.remove(canvas);
+            canvas = new Canvas(manager, user, name);
+            canvasFrame.add(canvas);
+            canvasFrame.revalidate();
+            canvasFrame.repaint();
         });
 
-        // Open an existing whiteboard from file.
+        // Open an existing canvas from file.
         openButton.addActionListener(e -> {
             try {
                 // Open the file chooser at the current directory.
@@ -208,14 +208,14 @@ public class WhiteboardGUI {
                     // Open the selected file.
                     FileInputStream fileInputStream = new FileInputStream(file);
 
-                    // Read whiteboard data from the opened file.
+                    // Read canvas data from the opened file.
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-                    Whiteboard opened = (Whiteboard) objectInputStream.readObject();
+                    Canvas opened = (Canvas) objectInputStream.readObject();
 
-                    whiteboard.setShapes(opened.shapes());
-                    whiteboard.setTexts(opened.texts());
-                    whiteboard.setName(opened.name());
-                    canvas.setTitle(whiteboard.name());
+                    canvas.setShapes(opened.shapes());
+                    canvas.setTexts(opened.texts());
+                    canvas.setName(opened.name());
+                    canvasFrame.setTitle(canvas.name());
 
                     fileInputStream.close();
                     objectInputStream.close();
@@ -234,12 +234,12 @@ public class WhiteboardGUI {
             }
         });
 
-        // Save the current whiteboard by writing to a file with the current name.
+        // Save the current canvas by writing to a file with the current name.
         saveButton.addActionListener(e -> {
             try {
-                FileOutputStream fileOutputStream = new FileOutputStream(whiteboard.name());
+                FileOutputStream fileOutputStream = new FileOutputStream(canvas.name());
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-                objectOutputStream.writeObject(whiteboard);
+                objectOutputStream.writeObject(canvas);
                 JOptionPane.showMessageDialog(controlFrame, "Saved successfully.",
                         "Save file", JOptionPane.INFORMATION_MESSAGE);
 
@@ -247,12 +247,12 @@ public class WhiteboardGUI {
                 objectOutputStream.close();
             }
             catch (IOException ioException) {
-                JOptionPane.showMessageDialog(controlFrame, "Unable to save the current whiteboard.",
+                JOptionPane.showMessageDialog(controlFrame, "Unable to save the current canvas.",
                         "Save failed", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Save the current whiteboard as a new file or to a file chosen by manager.
+        // Save the current canvas as a new file or to a file chosen by manager.
         saveAsButton.addActionListener(e -> {
             try {
                 // Open the file chooser at the current directory.
@@ -267,31 +267,31 @@ public class WhiteboardGUI {
 
                     FileOutputStream fileOutputStream = new FileOutputStream(file);
                     ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
-                    objectOutputStream.writeObject(whiteboard);
+                    objectOutputStream.writeObject(canvas);
 
                     fileOutputStream.close();
                     objectOutputStream.close();
                 }
             }
             catch (IOException ioException) {
-                JOptionPane.showMessageDialog(controlFrame, "Unable to save the current whiteboard.",
+                JOptionPane.showMessageDialog(controlFrame, "Unable to save the current canvas.",
                         "Save failed", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        // Close the whiteboard.
+        // Close the canvas and GUI.
         closeButton.addActionListener(e -> System.exit(0));
     }
 
-    // Get underlying Whiteboard object.
-    public Whiteboard whiteboard() { return this.whiteboard; }
+    // Get underlying Canvas object.
+    public Canvas whiteboard() { return this.canvas; }
 
-    // Overwrite whiteboard details/shapes/texts with received data.
-    public void overwrite(Whiteboard whiteboard) {
-        this.whiteboard.setShapes(whiteboard.shapes());
-        this.whiteboard.setTexts(whiteboard.texts());
-        this.whiteboard.setName(whiteboard.name());
-        canvas.setTitle(whiteboard.name());
+    // Overwrite canvas details/shapes/texts with received data.
+    public void overwrite(Canvas canvas) {
+        this.canvas.setShapes(canvas.shapes());
+        this.canvas.setTexts(canvas.texts());
+        this.canvas.setName(canvas.name());
+        canvasFrame.setTitle(canvas.name());
     }
 
     public void setChatlog(ArrayList<Message> chatlog) { this.chatlog = chatlog; }

@@ -11,13 +11,13 @@ import java.util.ArrayList;
 
 import javax.swing.*;
 
-public class Whiteboard extends JComponent
+public class Canvas extends JComponent
         implements Serializable {
 
-    // Shapes drawn on whiteboard.
+    // Shapes drawn on canvas.
     private ArrayList<StyledShape> shapes = new ArrayList<>();
 
-    // Texts typed on whiteboard.
+    // Texts typed on canvas.
     private ArrayList<StyledText> texts = new ArrayList<>();
 
     // Current position of user's cursor.
@@ -32,16 +32,16 @@ public class Whiteboard extends JComponent
     // Default insert mode.
     private Mode mode = Mode.LINE;
 
-    // Default whiteboard background.
+    // Default canvas background.
     private Boolean grid = false;
 
-    // Whiteboard manager.
+    // Canvas manager.
     private String manager;
 
-    // Whiteboard current user.
+    // Canvas current user.
     private String user;
 
-    // Whiteboard filename, to be used in Save/Save As operations.
+    // Canvas filename, to be used in Save/Save As operations.
     private String name;
 
     /*private final DataInputStream dataInputStream;
@@ -49,7 +49,7 @@ public class Whiteboard extends JComponent
     private final ObjectOutputStream objectOutputStream;
     private final ObjectInputStream objectInputStream;*/
 
-    public Whiteboard(String manager, String user, String name/*,
+    public Canvas(String manager, String user, String name/*,
                       DataInputStream dataInputStream, DataOutputStream dataOutputStream,
                       ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream*/) {
         this.manager = manager;
@@ -70,7 +70,7 @@ public class Whiteboard extends JComponent
                 }
             }
 
-            // Create a new shape and add it to whiteboard when mouse is released.
+            // Create a new shape and add it to canvas when mouse is released.
             public void mouseReleased(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     Shape shape = null;
@@ -93,7 +93,7 @@ public class Whiteboard extends JComponent
                             break;
                     }
 
-                    // If shape is valid, add it to whiteboard.
+                    // If shape is valid, add it to canvas.
                     if (shape != null) {
                         shapes.add(new StyledShape(shape, colour));
                     }
@@ -260,7 +260,7 @@ public class Whiteboard extends JComponent
 
     public void setName(String name) { this.name = name; }
 
-    // Clear whiteboard.
+    // Clear canvas.
     public void clear() {
         this.shapes = new ArrayList<>();
         this.texts = new ArrayList<>();

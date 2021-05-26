@@ -225,7 +225,7 @@
                 </constraints>
                 <properties>
                   <font style="0"/>
-                  <text value="Remove a user from current whiteboard"/>
+                  <text value="Remove a user from current canvas"/>
                 </properties>
               </component>
               <component id="968c5" class="javax.swing.JLabel">
@@ -234,7 +234,7 @@
                 </constraints>
                 <properties>
                   <font style="0"/>
-                  <text value="Leave the current whiteboard"/>
+                  <text value="Leave the current canvas"/>
                 </properties>
               </component>
               <component id="5b9a0" class="javax.swing.JButton" binding="leaveButton">

@@ -7,9 +7,9 @@ import javax.swing.event.*;
 
 public class TextField extends JTextField
         implements ActionListener, FocusListener, MouseListener, DocumentListener {
-    private Whiteboard whiteboard;
-    public TextField(Whiteboard whiteboard) {
-        this.whiteboard = whiteboard;
+    private Canvas canvas;
+    public TextField(Canvas canvas) {
+        this.canvas = canvas;
         setOpaque(false);
         setBorder(BorderFactory.createLineBorder(Color.black));
         setSize(getPreferredSize());
@@ -22,13 +22,13 @@ public class TextField extends JTextField
     //  Implement ActionListener
     public void actionPerformed(ActionEvent e) { setEditable(false); }
 
-    //  When user finishes typing, delete this field from whiteboard and draw the text.
+    //  When user finishes typing, delete this field from canvas and draw the text.
     public void focusLost(FocusEvent e) {
-        whiteboard.insertText(getText(), getLocation());
+        canvas.insertText(getText(), getLocation());
         setEditable(false);
         setBorder(null);
         setText("");
-        whiteboard.remove(this);
+        canvas.remove(this);
     }
 
     // Create border around text field to indicate it is being edited.
