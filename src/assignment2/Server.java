@@ -31,6 +31,9 @@ public class Server {
     // Currently connected users and their threads.
     public static ConcurrentHashMap<ClientHandler, String> handlers = new ConcurrentHashMap<>();
 
+    // Currently connected users by their username.
+    public static ArrayList<String> users = new ArrayList<>();
+
     // Chat log.
     public static ArrayList<Message> chatlog = new ArrayList<>();
 
@@ -48,6 +51,7 @@ public class Server {
 
         // Get username from STDIN.
         MANAGER = args[2];
+        users.add(MANAGER);
 
         // Invalid port, exit program.
         if (PORT < PORT_MIN || PORT > PORT_MAX) {
@@ -58,6 +62,7 @@ public class Server {
         // Open the Server Socket.
         ServerSocket server = new ServerSocket(PORT);
         System.out.println("Server started, waiting for connection...");
+
 
         // Create a new canvas and become its manager.
         gui = new WhiteboardGUI(MANAGER, MANAGER, MANAGER);
@@ -106,6 +111,11 @@ public class Server {
                     // Add client to list of clients.
                     clients.put(client, request.getUser());
                     handlers.put(clientHandler, request.getUser());
+                    users.add(request.getUser());
+                    Server.gui.getActiveUserList().setListData(users.toArray());
+
+                    // Notify other users.
+                    ClientHandler.broadcastJoin(request.getUser());
 
                     // Start the threads.
                     clientHandler.start();

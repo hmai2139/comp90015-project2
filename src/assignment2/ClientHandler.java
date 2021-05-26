@@ -12,6 +12,7 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 public class ClientHandler extends Thread {
 
@@ -40,6 +41,9 @@ public class ClientHandler extends Thread {
             // Send current chat log to client.
             objectOutputStream.writeObject(Server.chatlog);
 
+            // Send current user data to client.
+            objectOutputStream.writeObject(Server.users);
+
             String messageJSON;
             Message message;
 
@@ -57,16 +61,26 @@ public class ClientHandler extends Thread {
                 }
 
                 else {
+                    // Broadcast new message to other clients.
                     if (message.getOperation().equals(Request.CHAT.name())) {
-                        // Broadcast new message to other clients.
                         broadcastChat(messageJSON);
                     }
 
+                    // Broadcast new shape to other clients.
                     else if (message.getOperation().equals(Request.SHAPE.name())) {
                         broadcastShape(messageJSON);
                     }
 
+                    // Broadcast new text to other clients.
                     else if (message.getOperation().equals(Request.TEXT.name())) {
+                        broadcastText(messageJSON);
+                    }
+
+                    // Broadcast a client's leaving to clients.
+                    else if (message.getOperation().equals(Request.LEAVE.name())) {
+                        broadcastLeave(messageJSON);
+                        Server.users.remove(message.getUser());
+                        Server.gui.getActiveUserList().setListData(Server.users.toArray());
                     }
                 }
             }
@@ -119,13 +133,44 @@ public class ClientHandler extends Thread {
     }
 
     // Broadcast a JSON string to clients.
-    public synchronized  static void broadcast(String message) {
+    public synchronized static void broadcast(String message) {
         for (ClientHandler handler: Server.handlers.keySet()) {
             try {
                 handler.dataOutputStream().writeUTF(message);
             }
             catch (IOException exception) {
-                exception.printStackTrace();
+                System.out.println("Unable to broadcast. Client may be offline.");
+            }
+        }
+    }
+
+    // Broadcast a client's joining.
+    public synchronized static void broadcastJoin(String user) {
+        String message = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"}",
+                Response.NEW_JOINED, Server.MANAGER, user);
+        for (ClientHandler handler: Server.handlers.keySet()) {
+            if (!Server.handlers.get(handler).equals(user)){
+                try {
+                    handler.dataOutputStream().writeUTF(message);
+                }
+                catch (IOException exception) {
+                    System.out.println("Unable to broadcast. Client may be offline.");
+                }
+            }
+        }
+    }
+
+    // Broadcast a client's leaving.
+    public synchronized static void broadcastLeave(String leaveMessage) {
+        Message message = parseRequest(leaveMessage);
+        for (ClientHandler handler: Server.handlers.keySet()) {
+            if (!Server.handlers.get(handler).equals(message.getUser())){
+                try {
+                    handler.dataOutputStream().writeUTF(leaveMessage);
+                }
+                catch (IOException exception) {
+                    System.out.println("Unable to broadcast. Client may be offline.");
+                }
             }
         }
     }
@@ -137,7 +182,7 @@ public class ClientHandler extends Thread {
         // Add message to server chat log.
         message.setDateTime((LocalDateTime.now()));
         Server.chatlog.add(message);
-        Server.gui.logArea().append(Server.gui.localDateTime(message.getDateTime()) +
+        Server.gui.getLogArea().append(Server.gui.localDateTime(message.getDateTime()) +
                 message.getUser() + ": " + message.getMessage() + "\n");
 
         // Broadcast to all other clients.
@@ -147,7 +192,7 @@ public class ClientHandler extends Thread {
                     handler.dataOutputStream().writeUTF(chatMessage);
                 }
                 catch (IOException exception) {
-                    exception.printStackTrace();
+                    System.out.println("Unable to broadcast. Client may be offline.");
                 }
             }
         }
@@ -229,6 +274,15 @@ public class ClientHandler extends Thread {
     public static void clearCommand() {
         String command = String.format("{\"operation\": \"%s\", \"user\": \"%s\"}",
                 Response.CLEAR.name(), Server.MANAGER);
+        broadcast(command);
+    }
+
+    // Broadcast kick command to client.
+    public static void kick(String user) {
+        String command = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\"}",
+                Response.KICKED.name(), Server.MANAGER, user);
+        Server.users.remove(user);
+        Server.gui.getActiveUserList().setListData(Server.users.toArray());
         broadcast(command);
     }
 

@@ -6,9 +6,10 @@ public enum Response {
     CANVAS_FROM_FILE,
     CLEAR,
     JOIN_DECLINED,
+    KICKED,
     LOGIN_SUCCESS,
+    NEW_JOINED,
     WHITEBOARD_CLOSED,
-    WHITEBOARD_KICKED,
 
     // Error response.
     INVALID,

@@ -8,8 +8,7 @@ package assignment2;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -36,7 +35,8 @@ public class WhiteboardGUI {
     private JPanel userMenuPanel;
     private JTextArea logArea;
     private JTextField removeUserField;
-    private JScrollPane userScrollPanel;
+    private JList activeUserList;
+    private JPanel activeUserPanel;
     private JTextArea userActiveArea;
     private JPanel userInteractionPanel;
 
@@ -91,7 +91,24 @@ public class WhiteboardGUI {
             saveButton.setEnabled(false);
             saveAsButton.setEnabled(false);
             closeButton.setEnabled(false);
+            removeUserField.setEnabled(false);
         }
+
+        // Client leaves whiteboard.
+        leaveButton.addActionListener(e -> client.leave(user));
+
+        controlFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                client.leave(user);
+            }
+        });
+
+        canvasFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                ClientHandler.closeCommand();
+                client.leave(user);
+            }
+        });
     }
 
     // Class constructor for Whiteboard GUI used by server.
@@ -114,6 +131,12 @@ public class WhiteboardGUI {
             String message = chatField.getText();
             ClientHandler.chat(message);
             chatField.setText("");
+        });
+
+        // Manager leaves whiteboard.
+        leaveButton.addActionListener(e -> {
+            ClientHandler.closeCommand();
+            System.exit(0);
         });
     }
 
@@ -189,6 +212,7 @@ public class WhiteboardGUI {
 
     // Initialise manager-exclusive listeners.
     private void managerInitialise() {
+        activeUserList.setListData(Server.users.toArray());
 
         // Clear all drawn shapes from canvas.
         newButton.addActionListener(e -> {
@@ -287,10 +311,30 @@ public class WhiteboardGUI {
             }
         });
 
-        // Close the canvas and GUI.
+        // Close the canvas and GUI when Close button is pressed/GUI window is closed.
         closeButton.addActionListener(e -> {
             ClientHandler.closeCommand();
             System.exit(0);
+        });
+
+        controlFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                ClientHandler.closeCommand();
+                System.exit(0);
+            }
+        });
+
+        canvasFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                ClientHandler.closeCommand();
+                System.exit(0);
+            }
+        });
+
+        // Kick user listener.
+        removeUserField.addActionListener(e -> {
+            ClientHandler.kick(removeUserField.getText());
+            removeUserField.setText("");
         });
     }
 
@@ -305,11 +349,9 @@ public class WhiteboardGUI {
         canvasFrame.setTitle(canvas.name());
     }
 
-    public void setChatlog(ArrayList<Message> chatlog) { this.chatlog = chatlog; }
+    public JTextArea getLogArea() { return this.logArea; }
 
-    public JFrame getControlFrame() { return this.controlFrame; }
-
-    public JTextArea logArea() { return this.logArea; }
+    public JList getActiveUserList() { return this.activeUserList; };
 
     // Get local date and time.
     public String localDateTime() {

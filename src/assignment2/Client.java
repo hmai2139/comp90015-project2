@@ -21,6 +21,7 @@ public class Client {
     private final ObjectOutputStream objectOutputStream;
     private final ObjectInputStream objectInputStream;
     private ArrayList<Message> chatlog;
+    private ArrayList<String> users;
     private WhiteboardGUI gui;
 
     public static void main(String[] args) {
@@ -107,9 +108,10 @@ public class Client {
         this.objectOutputStream = objectOutputStream;
         this.objectInputStream = objectInputStream;
 
-        // Obtain canvas data and chat log from server.
+        // Obtain canvas data, chat log and user list from server.
         Canvas fromServer = (Canvas) objectInputStream.readObject();
         chatlog = (ArrayList<Message>) objectInputStream.readObject();
+        users = (ArrayList<String>) objectInputStream.readObject();
 
         // Extract needed data and create own canvas.
         Canvas canvas = new Canvas(fromServer.manager(), user, fromServer.name());
@@ -122,9 +124,12 @@ public class Client {
 
         // Display chat log to-date.
         for (Message chat : chatlog) {
-            gui.logArea().append(
+            gui.getLogArea().append(
                     gui.localDateTime(chat.getDateTime()) + chat.getUser() + ": " + chat.getMessage() + "\n");
         }
+
+        // Display user list to-date.
+        this.gui.getActiveUserList().setListData(users.toArray());
 
         // Infinite loop to handle communication between client and server's client handler.
         while (true) {
@@ -138,7 +143,7 @@ public class Client {
 
                 // Server sent a chat message.
                 if (reply.getOperation().equals(Request.CHAT.name())) {
-                    gui.logArea().append(gui.localDateTime() + reply.getUser() + ": " + reply.getMessage() + "\n");
+                    gui.getLogArea().append(gui.localDateTime() + reply.getUser() + ": " + reply.getMessage() + "\n");
                 }
 
                 // Server sent a new shape.
@@ -192,6 +197,36 @@ public class Client {
                     System.out.println("Exiting...");
                     System.exit(0);
                 }
+
+                // Server sent a kick command.
+                else if (reply.getOperation().equals(Response.KICKED.name())) {
+
+                    // You are the chosen one :(.
+                    if (reply.getMessage().equalsIgnoreCase(user())) {
+                        showErrorPanel("Manager has removed you from whiteboard.", "Removed :(.");
+                        System.out.println("Exiting...");
+                        System.exit(0);
+                    }
+
+                    // Otherwise update current users.
+                    else {
+                        users.remove(reply.getMessage());
+                        gui.getActiveUserList().setListData(users.toArray());
+                    }
+                }
+
+                // A new user joined.
+                else if (reply.getOperation().equals(Response.NEW_JOINED.name())) {
+                    users.add(reply.getMessage());
+                    System.out.println(reply.getMessage());
+                    gui.getActiveUserList().setListData(users.toArray());
+                }
+
+                // A user left.
+                else if (reply.getOperation().equals(Request.LEAVE.name())) {
+                    users.remove(reply.getUser());
+                    gui.getActiveUserList().setListData(users.toArray());
+                }
             }
         }
     }
@@ -215,6 +250,20 @@ public class Client {
                 Request.CHAT.name(), user, message);
         try {
             dataOutputStream.writeUTF(request);
+        }
+        catch (Exception e) {
+            System.out.println("Cannot send chat message.");
+        }
+    }
+
+    // Submits leave request.
+    public void leave(String user) {
+        String request = String.format("{\"operation\": \"%s\", \"user\": \"%s\"}",
+                Request.LEAVE.name(), user);
+        try {
+            dataOutputStream.writeUTF(request);
+            System.out.println("Leaving...");
+            System.exit(0);
         }
         catch (Exception e) {
             System.out.println("Cannot send chat message.");
@@ -251,6 +300,8 @@ public class Client {
     }
 
     public String user() { return this.user; }
+
+    public ArrayList<String> getUsers() { return this.users; }
 
     public DataOutputStream outputStream() { return this.dataOutputStream; }
 
