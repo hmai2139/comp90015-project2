@@ -51,22 +51,27 @@ public class Canvas extends JComponent
     // Canvas filename, to be used in Save/Save As operations.
     private String name;
 
-    /*private final DataInputStream dataInputStream;
-    private final DataOutputStream dataOutputStream;
-    private final ObjectOutputStream objectOutputStream;
-    private final ObjectInputStream objectInputStream;*/
+    // Client object, for client-side Canvas only.
+    private Client client;
 
-    public Canvas(String manager, String user, String name/*,
-                      DataInputStream dataInputStream, DataOutputStream dataOutputStream,
-                      ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream*/) {
+    // Canvas constructor for Server.
+    public Canvas(String manager, String user, String name) {
         this.manager = manager;
         this.user = user;
         this.name = name;
-        //this.dataInputStream = dataInputStream;
-        //this.dataOutputStream = dataOutputStream;
-        //this.objectOutputStream = objectOutputStream;
-        //this.objectInputStream = objectInputStream;
+        initialise();
+    }
 
+    // Canvas constructor for Client.
+    public Canvas(String manager, String user, String name, Client client) {
+        this.manager = manager;
+        this.user = user;
+        this.name = name;
+        this.client = client;
+        initialise();
+    }
+
+    public void initialise() {
         // Get start location of user's cursor.
         addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
@@ -80,29 +85,21 @@ public class Canvas extends JComponent
             // Create a new shape and add it to canvas when mouse is released.
             public void mouseReleased(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    Shape shape = null;
-
-                    switch (mode) {
-                        case LINE:
-                            shape = drawLine(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                            break;
-                        case CIRCLE:
-                            shape = drawCircle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                            break;
-                        case OVAL:
-                            shape = drawOval(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                            break;
-                        case RECTANGLE:
-                            shape = drawRectangle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                            break;
-                        case SQUARE:
-                            shape = drawSquare(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                            break;
-                    }
+                    Shape shape = drawShape();
 
                     // If shape is valid, add it to canvas.
                     if (shape != null) {
-                        shapes.add(new StyledShape(shape, colour));
+                        StyledShape styledShape = new StyledShape(shape, colour);
+                        shapes.add(styledShape);
+
+                        // New shape drawn by client, send it to server.
+                        if (client != null) {
+
+                        }
+
+                        // New shape drawn by server, broadcast it.
+                        else {
+                        }
                     }
 
                     // Nullify coordinates to prevent any unintended drawing.
@@ -115,7 +112,7 @@ public class Canvas extends JComponent
 
         // Get end location of user's cursor.
         addMouseMotionListener(new MouseMotionAdapter() {
-            public void mouseDragged (MouseEvent e) {
+            public void mouseDragged(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     pointEnd = new Point(e.getX(), e.getY());
                     repaint();
@@ -155,30 +152,32 @@ public class Canvas extends JComponent
         // Show shape preview before drawing.
         if (pointStart != null && pointEnd != null) {
             g2.setPaint(Color.LIGHT_GRAY);
-            Shape shape = null;
-
-            switch (mode) {
-                case LINE:
-                    shape = drawLine(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                    break;
-                case CIRCLE:
-                    shape = drawCircle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                    break;
-                case OVAL:
-                    shape = drawOval(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                    break;
-                case RECTANGLE:
-                    shape = drawRectangle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                    break;
-                case SQUARE:
-                    shape = drawSquare(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
-                   break;
-            }
-
+            Shape shape = drawShape();
             if (shape != null) {
                 g2.draw(shape);
             }
         }
+    }
+
+    private Shape drawShape() {
+
+        switch (mode) {
+            case LINE:
+                return drawLine(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
+
+            case CIRCLE:
+                return drawCircle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
+
+            case OVAL:
+                return drawOval(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
+
+            case RECTANGLE:
+                return drawRectangle(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
+
+            case SQUARE:
+                return drawSquare(pointStart.x, pointStart.y, pointEnd.x, pointEnd.y);
+        }
+        return null;
     }
 
     // Insert text.
@@ -187,27 +186,27 @@ public class Canvas extends JComponent
     }
 
     // Draw a line.
-    private Line2D.Float drawLine(int x1, int y1, int x2, int y2) {
+    public static Line2D.Float drawLine(int x1, int y1, int x2, int y2) {
         return new Line2D.Float(x1, y1, x2, y2);
     }
 
     // Draw a circle.
-    private Ellipse2D.Float drawCircle(int x1, int y1, int x2, int y2) {
+    public static Ellipse2D.Float drawCircle(int x1, int y1, int x2, int y2) {
         return new Ellipse2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(x1 - x2));
     }
 
     // Draw an oval.
-    private Ellipse2D.Float drawOval(int x1, int y1, int x2, int y2) {
+    public static Ellipse2D.Float drawOval(int x1, int y1, int x2, int y2) {
         return new Ellipse2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2));
     }
 
     // Draw a rectangle.
-    private Rectangle2D.Float drawRectangle(int x1, int y1, int x2, int y2) {
+    public static Rectangle2D.Float drawRectangle(int x1, int y1, int x2, int y2) {
         return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(y1 - y2));
     }
 
     // Draw a square.
-    private Rectangle2D.Float drawSquare(int x1, int y1, int x2, int y2) {
+    public static Rectangle2D.Float drawSquare(int x1, int y1, int x2, int y2) {
         return new Rectangle2D.Float(Math.min(x1, x2), Math.min(y1, y2), Math.abs(x1 - x2), Math.abs(x1 - x2));
     }
 
@@ -252,10 +251,20 @@ public class Canvas extends JComponent
         repaint();
     }
 
+    public void addShape(StyledShape shape) {
+        this.shapes.add(shape);
+        repaint();
+    }
+
     public ArrayList<StyledText> texts() { return this.texts; }
 
     public void setTexts(ArrayList<StyledText> texts) {
         this.texts = texts;
+        repaint();
+    }
+
+    public void addText(StyledText text) {
+        this.texts.add(text);
         repaint();
     }
 

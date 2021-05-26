@@ -35,3 +35,31 @@ public class StyledText implements Serializable {
 
     public Point point() { return this.point; }
 }
+
+// JSON-convertible representation of the StyledText class.
+class StyledTextJSON {
+    private final String text;
+    private final String colour;
+    private final String font;
+    private final int x1;
+    private final int y1;
+
+    public StyledTextJSON(String text, String colour, String font, int x1, int y1) {
+        this.text = text;
+        this.colour = colour;
+        this.font = font;
+        this.x1 = x1;
+        this.y1 = y1;
+    }
+
+    public String shape() { return this.text; }
+
+    public String colour() { return this.colour; }
+
+    public String font() { return this.font(); }
+
+    public int x1() { return this.x1; }
+
+    public int y1() { return this.x1; }
+
+}

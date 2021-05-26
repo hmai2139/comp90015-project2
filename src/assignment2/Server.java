@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 public class Server {
 
     // Allowed port range.
@@ -26,8 +27,7 @@ public class Server {
     public static ConcurrentHashMap<Socket, String> clients = new ConcurrentHashMap<>();
 
     // Currently connected users and their threads.
-    public static ConcurrentHashMap<RequestHandler, String> requestThreads = new ConcurrentHashMap<>();
-    public static ConcurrentHashMap<ChatHandler, String> chatThreads = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<ClientHandler, String> handlers = new ConcurrentHashMap<>();
 
     // Chat log.
     public static ArrayList<Message> chatlog = new ArrayList<>();
@@ -38,8 +38,6 @@ public class Server {
     // Canvas and Whiteboard GUI.
     public static Canvas canvas;
     public static WhiteboardGUI gui;
-
-    public static Server server;
 
     public static void main(String[] args) throws IOException {
 
@@ -79,44 +77,44 @@ public class Server {
                 // Check if incoming client's chosen username is unique.
                 String requestJSON = dataInputStream.readUTF();
                 System.out.println(requestJSON);
-                Message request = ChatHandler.parseRequest(requestJSON);
+                Message request = ClientHandler.parseRequest(requestJSON);
 
                 // Notify incoming client that they have chosen the same name as manager.
-                if (request.user.trim().equalsIgnoreCase(MANAGER.trim())) {
-                    dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
-                    client.close();
-                }
-
-                else {
-
-                    // Notify incoming client that they have chosen the same name as as an existing client.
-                    for (Socket socket : clients.keySet()) {
-                        if (clients.get(socket).trim().equalsIgnoreCase(request.user.trim())) {
-                            dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
-                            client.close();
-                        }
+                if (request != null) {
+                    if (request.user().trim().equalsIgnoreCase(MANAGER.trim())) {
+                        dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
+                        client.close();
                     }
 
-                    // Notify incoming client of successful login.
-                    dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
+                    else {
 
-                    // Create Object I/O streams to send/receive Objects to/from client.
-                    ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
-                    ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
+                        // Notify incoming client that they have chosen the same name as as an existing client.
+                        for (Socket socket : clients.keySet()) {
+                            if (clients.get(socket).trim().equalsIgnoreCase(request.user().trim())) {
+                                dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
+                                client.close();
+                            }
+                        }
 
-                    // Create new threads to handle requests.
-                    System.out.println("Creating new thread for the client " + client + "...");
-                    RequestHandler requestHandler = new RequestHandler(client, objectOutputStream, objectInputStream);
-                    ChatHandler chatHandler = new ChatHandler(client, dataInputStream, dataOutputStream);
+                        // Notify incoming client of successful login.
+                        dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
 
-                    // Add client to list of clients.
-                    clients.put(client, request.user);
-                    requestThreads.put(requestHandler, request.user);
-                    chatThreads.put(chatHandler, request.user);
+                        // Create Object I/O streams to send/receive Objects to/from client.
+                        ObjectOutputStream objectOutputStream = new ObjectOutputStream(client.getOutputStream());
+                        ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
 
-                    // Start the threads.
-                    requestHandler.start();
-                    chatHandler.start();
+                        // Create new threads to handle requests.
+                        System.out.println("Creating a new thread for the client " + client + "...");
+                        ClientHandler clientHandler = new ClientHandler(client, dataInputStream, dataOutputStream,
+                                objectOutputStream, objectInputStream);
+
+                        // Add client to list of clients.
+                        clients.put(client, request.user());
+                        handlers.put(clientHandler, request.user());
+
+                        // Start the threads.
+                        clientHandler.start();
+                    }
                 }
             }
             catch (BindException e) {
@@ -127,7 +125,9 @@ public class Server {
                 System.out.println("Socket error: connection with " + client + " has been terminated.");
             }
             catch (Exception e) {
-                client.close();
+                if (client != null) {
+                    client.close();
+                }
                 e.printStackTrace();
             }
         }
@@ -135,85 +135,48 @@ public class Server {
 }
 
 /*
- ** Thread for handling drawing requests.
+ ** Thread for handling clients' requests.
  */
-class RequestHandler extends Thread {
+class ClientHandler extends Thread {
 
-    private final Socket client;
-    private final ObjectOutputStream out;
-    private final ObjectInputStream in;
+    final Socket client;
+    final DataInputStream dataInputStream;
+    final DataOutputStream dataOutputStream;
+    final ObjectOutputStream objectOutputStream;
+    final ObjectInputStream objectInputStream;
 
-    public RequestHandler(Socket client, ObjectOutputStream out, ObjectInputStream in) {
+    public ClientHandler(Socket client,
+                         DataInputStream dataInputStream, DataOutputStream dataOutputStream,
+                         ObjectOutputStream objectOutputStream, ObjectInputStream objectInputStream) {
         this.client = client;
-        this.out = out;
-        this.in = in;
+        this.dataInputStream = dataInputStream;
+        this.dataOutputStream = dataOutputStream;
+        this.objectOutputStream = objectOutputStream;
+        this.objectInputStream = objectInputStream;
     }
 
     @Override
     public synchronized void run() {
         try {
             // Send current canvas data to client.
-            out.writeObject(Server.canvas);
+            objectOutputStream.writeObject(Server.canvas);
 
             // Send current chat log to client.
-            out.writeObject(Server.chatlog);
+            objectOutputStream.writeObject(Server.chatlog);
 
-            while (true) {
-
-            }
-        }
-        // Socket error, close thread.
-        catch (SocketException e) {
-            System.out.println("Socket error: connection with " + client + " has been terminated.");
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        catch (NullPointerException e) {
-            System.out.println(Response.INVALID);
-        }
-        catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    public ObjectOutputStream objectOutputStream() { return this.out; }
-
-    public ObjectInputStream objectInputStream() { return this.in; }
-}
-
-/*
- ** Thread for handling chat functionality.
- */
-class ChatHandler extends Thread {
-
-    final Socket client;
-    final DataInputStream in;
-    final DataOutputStream out;
-
-    public ChatHandler(Socket client, DataInputStream in, DataOutputStream out) {
-        this.client = client;
-        this.in = in;
-        this.out = out;
-    }
-
-    @Override
-    public synchronized void run() {
-        try {
             String chatMessage;
             Message chat;
 
             while (true) {
 
                 // Receive request (a JSON string) from client and convert it to a TextRequest Object.
-                chatMessage = in.readUTF();
+                chatMessage = dataInputStream.readUTF();
                 System.out.println(chatMessage);
                 chat = parseRequest(chatMessage);
 
                 // Empty request.
                 if (chat == null) {
-                    out.writeUTF(Response.INVALID.name());
+                    dataOutputStream.writeUTF(Response.INVALID.name());
                     continue;
                 }
 
@@ -234,8 +197,7 @@ class ChatHandler extends Thread {
     public static Message parseRequest(String requestJSON) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            Message request = mapper.readValue(requestJSON, Message.class);
-            return request;
+            return mapper.readValue(requestJSON, Message.class);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -243,12 +205,15 @@ class ChatHandler extends Thread {
         }
     }
 
+    // Chat functionality for manager.
     public synchronized static void chat(String message) {
         String chatMessage = String.format("{\"operation\": \"%s\", \"user\": \"%s\", \"message\": \"%s\" }",
                 Request.CHAT.name(), Server.MANAGER, message);
         try {
             Message chat = parseRequest(chatMessage);
-            chat.dateTime = LocalDateTime.now();
+            if (chat != null) {
+                chat.setDateTime(LocalDateTime.now());
+            }
 
             // Broadcast new message to other clients.
             broadcast(chatMessage);
@@ -258,18 +223,19 @@ class ChatHandler extends Thread {
         }
     }
 
+    // Broadcast chat functionality for manager.
     public synchronized static void broadcast(String chatMessage) {
         Message chat = parseRequest(chatMessage);
 
         // Add message to server chat log.
-        chat.dateTime = LocalDateTime.now();
+        chat.setDateTime((LocalDateTime.now()));
         Server.chatlog.add(chat);
         Server.gui.logArea().append(
-                Server.gui.localDateTime(chat.dateTime) + chat.user + ": " + chat.message + "\n");
+                Server.gui.localDateTime(chat.dateTime()) + chat.user() + ": " + chat.message() + "\n");
 
         // Broadcast to all other clients.
-        for (ChatHandler thread: Server.chatThreads.keySet()) {
-            if (!Server.chatThreads.get(thread).equals(chat.user)){
+        for (ClientHandler thread: Server.handlers.keySet()) {
+            if (!Server.handlers.get(thread).equals(chat.user())){
                 try {
                     thread.out().writeUTF(chatMessage);
                 }
@@ -280,22 +246,21 @@ class ChatHandler extends Thread {
         }
     }
 
-    public DataInputStream in() { return in; }
+    public DataInputStream in() { return this.dataInputStream; }
 
-    public DataOutputStream out() { return out; }
+    public DataOutputStream out() { return this.dataOutputStream; }
 }
 
 /*
- ** Representation of a given client text-based request.
+ ** Representation of a text message between server and clients.
  */
-class Message
-        implements Comparable<Message>, Serializable {
-    public String operation;
-    public String user;
-    public String message;
-    public LocalDateTime dateTime;
+class Message implements Comparable<Message>, Serializable {
+    private String operation;
+    private String user;
+    private String message;
+    //private String
+    private LocalDateTime dateTime;
 
-    // Class constructor.
     public Message(String operation, String user, String message) {
         this.operation = operation;
         this.user = user;
@@ -303,12 +268,18 @@ class Message
         dateTime = LocalDateTime.now();
     }
 
-    // Default constructor.
-    public Message() {
-    }
-
     @Override
     public int compareTo(Message o) {
         return this.dateTime.compareTo(o.dateTime);
     }
+
+    public String operation() { return this.operation; }
+
+    public String user() { return this.user; }
+
+    public LocalDateTime dateTime() { return this.dateTime; }
+
+    public String message() { return this.message; }
+
+    public void setDateTime(LocalDateTime dateTime) { this.dateTime = dateTime; }
 }

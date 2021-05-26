@@ -4,4 +4,6 @@ public enum Request {
     LOGIN,
     LEAVE,
     CHAT,
+    SHAPE,
+    TEXT
 }

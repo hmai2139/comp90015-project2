@@ -123,15 +123,15 @@ public class Client {
 
         // Display chat log to-date.
         for (Message chat: chatlog) {
-            this.gui.logArea().append(gui.localDateTime(chat.dateTime) + chat.user + ": " + chat.message + "\n");
+            this.gui.logArea().append(gui.localDateTime(chat.dateTime()) + chat.user() + ": " + chat.message() + "\n");
         }
 
         // Infinite loop to handle communication between client and server's client handler.
         while (true) {
             // Get reply from client handler.
             String replyJSON = dataInputStream.readUTF();
-            Message reply = ChatHandler.parseRequest(replyJSON);
-            gui.logArea().append(gui.localDateTime() + reply.user + ": " + reply.message + "\n");
+            Message reply = ClientHandler.parseRequest(replyJSON);
+            gui.logArea().append(gui.localDateTime() + reply.user() + ": " + reply.message() + "\n");
             System.out.println(replyJSON);
         }
     }

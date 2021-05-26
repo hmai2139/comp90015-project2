@@ -11,7 +11,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
-import java.net.ServerSocket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -45,13 +44,8 @@ public class WhiteboardGUI {
     private String user;
     private String name;
 
-    // Server and client sockets.
-    private ServerSocket server;
+    // Client object, for client-side Whiteboard GUI only.
     private Client client;
-
-    // I/O streams.
-    //private final DataInputStream dataInputStream;
-    //private final DataOutputStream dataOutputStream;
 
     // Chat log.
     private ArrayList<Message> chatlog;
@@ -64,15 +58,12 @@ public class WhiteboardGUI {
 
     // Class constructor for Whiteboard GUI used by clients.
     public WhiteboardGUI(String manager, String user, String name,
-                         Client client, ArrayList<Message> chatlog/*,
-                      DataInputStream dataInputStream, DataOutputStream dataOutputStream*/) {
+                         Client client, ArrayList<Message> chatlog) {
         this.manager = manager;
         this.user = user;
         this.name = name;
         this.client = client;
         this.chatlog = chatlog;
-        //this.dataInputStream = dataInputStream;
-        //this.dataOutputStream = dataOutputStream;
 
         // Initialise whiteboard.
         initialise(manager, user, name);
@@ -86,6 +77,15 @@ public class WhiteboardGUI {
             logArea.append(localDateTime() + user + ": " + message + "\n");
             chatField.setText("");
         });
+
+        // Disable manager-exclusive listeners for non-manager users.
+        if (!this.user.equals(this.manager)) {
+            newButton.setEnabled(false);
+            openButton.setEnabled(false);
+            saveButton.setEnabled(false);
+            saveAsButton.setEnabled(false);
+            closeButton.setEnabled(false);
+        }
     }
 
     // Class constructor for Whiteboard GUI used by server.
@@ -96,16 +96,17 @@ public class WhiteboardGUI {
 
         // Initialise whiteboard.
         initialise(manager, user, name);
+        managerInitialise();
 
         // Broadcast message from server to clients.
         chatField.addActionListener(e -> {
             String message = chatField.getText();
-            ChatHandler.chat(message);
+            ClientHandler.chat(message);
             chatField.setText("");
         });
     }
 
-    public void initialise(String manager, String user, String name) {
+    private void initialise(String manager, String user, String name) {
         // Get screen size.
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -177,17 +178,10 @@ public class WhiteboardGUI {
 
         // Switch background.
         switchBackgroundButton.addActionListener(e -> canvas.switchGrid());
+    }
 
-        // -------- Manager-exclusive action listeners -------- //
-
-        // Disable manager-exclusive listeners for non-manager users.
-        if (!this.user.equals(this.manager)) {
-            newButton.setEnabled(false);
-            openButton.setEnabled(false);
-            saveButton.setEnabled(false);
-            saveAsButton.setEnabled(false);
-            closeButton.setEnabled(false);
-        }
+    // Initialise manager-exclusive listeners.
+    private void managerInitialise() {
 
         // Clear all drawn shapes from canvas.
         newButton.addActionListener(e -> {
@@ -221,7 +215,7 @@ public class WhiteboardGUI {
                     canvas.setShapes(opened.shapes());
                     canvas.setTexts(opened.texts());
                     canvas.setName(opened.name());
-                    canvasFrame.setTitle(canvas.name());
+                    canvasFrame.setTitle(file.getName());
 
                     fileInputStream.close();
                     objectInputStream.close();
@@ -243,7 +237,7 @@ public class WhiteboardGUI {
         // Save the current canvas by writing to a file with the current name.
         saveButton.addActionListener(e -> {
             try {
-                FileOutputStream fileOutputStream = new FileOutputStream(canvas.name());
+                FileOutputStream fileOutputStream = new FileOutputStream(canvasFrame.getTitle());
                 ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
                 objectOutputStream.writeObject(canvas);
                 JOptionPane.showMessageDialog(controlFrame, "Saved successfully.",
