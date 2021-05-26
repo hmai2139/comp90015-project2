@@ -1,6 +1,10 @@
-package assignment2;
+/**
+ * @author Hoang Viet Mai, vietm@student.unimelb.edu.au, 813361.
+ * COMP90015 S1 2021, Assignment 2, Distributed Whiteboard System.
+ * Client implementation.
+ */
 
-// Dependencies.
+package assignment2;
 
 import javax.swing.*;
 import java.awt.*;

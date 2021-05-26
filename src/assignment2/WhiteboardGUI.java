@@ -1,3 +1,9 @@
+/**
+ * @author Hoang Viet Mai, vietm@student.unimelb.edu.au, 813361.
+ * COMP90015 S1 2021, Assignment 2, Distributed Whiteboard System.
+ * Whiteboard Graphical User Interface (GUI) implementation.
+ */
+
 package assignment2;
 
 import javax.swing.*;

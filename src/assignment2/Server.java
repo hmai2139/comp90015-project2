@@ -1,3 +1,9 @@
+/**
+ * @author Hoang Viet Mai, vietm@student.unimelb.edu.au, 813361.
+ * COMP90015 S1 2021, Assignment 2, Distributed Whiteboard System.
+ * Server implementation.
+ */
+
 package assignment2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,7 +32,7 @@ public class Server {
     // Chat log.
     public static ArrayList<Message> chatlog = new ArrayList<>();
 
-    // Canvas manager.
+    // Whiteboard manager.
     public static String MANAGER;
 
     // Canvas and Whiteboard GUI.
@@ -66,29 +72,32 @@ public class Server {
                 client = server.accept();
                 System.out.println("A new client is connected : " + client);
 
-                // Create Data I/O streams to communicate with client.
+                // Create Data I/O streams to communicate with incoming client.
                 DataInputStream dataInputStream = new DataInputStream(client.getInputStream());
                 DataOutputStream dataOutputStream = new DataOutputStream(client.getOutputStream());
 
-                // Check if client's chosen username is unique.
+                // Check if incoming client's chosen username is unique.
                 String requestJSON = dataInputStream.readUTF();
                 System.out.println(requestJSON);
                 Message request = ChatHandler.parseRequest(requestJSON);
 
-                // Same name as manager.
+                // Notify incoming client that they have chosen the same name as manager.
                 if (request.user.trim().equalsIgnoreCase(MANAGER.trim())) {
                     dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
                     client.close();
                 }
 
                 else {
-                    // Same name as an existing client.
+
+                    // Notify incoming client that they have chosen the same name as as an existing client.
                     for (Socket socket : clients.keySet()) {
                         if (clients.get(socket).trim().equalsIgnoreCase(request.user.trim())) {
                             dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
                             client.close();
                         }
                     }
+
+                    // Notify incoming client of successful login.
                     dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
 
                     // Create Object I/O streams to send/receive Objects to/from client.
@@ -173,6 +182,7 @@ class RequestHandler extends Thread {
 
     public ObjectInputStream objectInputStream() { return this.in; }
 }
+
 /*
  ** Thread for handling chat functionality.
  */
