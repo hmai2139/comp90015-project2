@@ -122,7 +122,7 @@ public class ClientHandler extends Thread {
     public synchronized  static void broadcast(String message) {
         for (ClientHandler handler: Server.handlers.keySet()) {
             try {
-                handler.out().writeUTF(message);
+                handler.dataOutputStream().writeUTF(message);
             }
             catch (IOException exception) {
                 exception.printStackTrace();
@@ -144,7 +144,7 @@ public class ClientHandler extends Thread {
         for (ClientHandler handler: Server.handlers.keySet()) {
             if (!Server.handlers.get(handler).equals(message.getUser())){
                 try {
-                    handler.out().writeUTF(chatMessage);
+                    handler.dataOutputStream().writeUTF(chatMessage);
                 }
                 catch (IOException exception) {
                     exception.printStackTrace();
@@ -170,10 +170,10 @@ public class ClientHandler extends Thread {
         for (ClientHandler handler: Server.handlers.keySet()) {
             if (!Server.handlers.get(handler).equals(message.getUser())){
                 try {
-                    handler.out().writeUTF(shapeMessage);
+                    handler.dataOutputStream().writeUTF(shapeMessage);
                 }
-                catch (IOException exception) {
-                    exception.printStackTrace();
+                catch (Exception e) {
+                    System.out.println("Unable to broadcast. Client may be offline.");
                 }
             }
         }
@@ -194,13 +194,35 @@ public class ClientHandler extends Thread {
         for (ClientHandler handler: Server.handlers.keySet()) {
             if (!Server.handlers.get(handler).equals(message.getUser())){
                 try {
-                    handler.out().writeUTF(textMessage);
+                    handler.dataOutputStream().writeUTF(textMessage);
                 }
-                catch (IOException exception) {
-                    exception.printStackTrace();
+                catch (IOException e) {
+                    System.out.println("Unable to broadcast. Client may be offline.");
                 }
             }
         }
+    }
+
+    // Broadcast canvas data from file to clients.
+    public synchronized static void broadcastFile(Canvas canvas) {
+
+        // Send current canvas data to clients.
+        for (ClientHandler handler: Server.handlers.keySet()) {
+            try {
+                handler.objectOutputStream().writeObject(canvas);
+            }
+            catch (IOException e) {
+                System.out.println("Unable to broadcast. Client may be offline.");
+            }
+        }
+    }
+
+    // Open canvas from file and broadcast to client.
+    public synchronized static void openCommand(Canvas canvas) {
+        String command = String.format("{\"operation\": \"%s\", \"user\": \"%s\"}",
+                Response.CANVAS_FROM_FILE, Server.MANAGER);
+        broadcast(command);
+        broadcastFile(canvas);
     }
 
     // Broadcast clear command to client.
@@ -217,7 +239,9 @@ public class ClientHandler extends Thread {
         broadcast(command);
     }
 
-    public DataInputStream in() { return this.dataInputStream; }
+    public DataInputStream dataInputStream() { return this.dataInputStream; }
 
-    public DataOutputStream out() { return this.dataOutputStream; }
+    public DataOutputStream dataOutputStream() { return this.dataOutputStream; }
+
+    public ObjectOutputStream objectOutputStream() { return this.objectOutputStream; }
 }

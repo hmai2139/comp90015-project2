@@ -70,8 +70,7 @@ public class WhiteboardGUI {
 
         // Create a new canvas.
         canvas = new Canvas(manager, user, name, client);
-        canvasFrame = new JFrame("Canvas");
-        canvasFrame.setTitle(name);
+        canvasFrame = new JFrame(name);
 
         // Initialise whiteboard.
         initialise(manager, user);
@@ -217,10 +216,14 @@ public class WhiteboardGUI {
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
                     Canvas opened = (Canvas) objectInputStream.readObject();
 
+                    canvas.clear();
                     canvas.setShapes(opened.shapes());
                     canvas.setTexts(opened.texts());
                     canvas.setName(opened.name());
                     canvasFrame.setTitle(file.getName());
+
+                    // Broadcast data from file to client.
+                    ClientHandler.openCommand(opened);
 
                     fileInputStream.close();
                     objectInputStream.close();
@@ -285,7 +288,10 @@ public class WhiteboardGUI {
         });
 
         // Close the canvas and GUI.
-        closeButton.addActionListener(e -> System.exit(0));
+        closeButton.addActionListener(e -> {
+            ClientHandler.closeCommand();
+            System.exit(0);
+        });
     }
 
     // Get underlying Canvas object.

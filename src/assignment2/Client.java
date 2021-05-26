@@ -110,6 +110,7 @@ public class Client {
         // Obtain canvas data and chat log from server.
         Canvas fromServer = (Canvas) objectInputStream.readObject();
         chatlog = (ArrayList<Message>) objectInputStream.readObject();
+
         // Extract needed data and create own canvas.
         Canvas canvas = new Canvas(fromServer.manager(), user, fromServer.name());
         canvas.setShapes(fromServer.shapes());
@@ -163,6 +164,21 @@ public class Client {
                     Color colour = new Color(Integer.parseInt(reply.getColour()));
                     StyledText styledText = new StyledText(text, colour, new Point(x1, y1));
                     gui.canvas().addText(styledText);
+                }
+
+                // Server opened a canvas from file.
+                else if (reply.getOperation().equals(Response.CANVAS_FROM_FILE.name())) {
+
+                    // Obtain canvas data from server.
+                    Canvas opened = (Canvas) objectInputStream.readObject();
+                    System.out.println(opened.name());
+
+                    // Extract needed data and overwrite canvas.
+                    Canvas newCanvas = new Canvas(opened.manager(), user, opened.name());
+                    newCanvas.setShapes(opened.shapes());
+                    newCanvas.setTexts(opened.texts());
+                    this.gui.canvas().clear();
+                    this.gui.overwrite(newCanvas);
                 }
 
                 // Server sent a clear canvas command.

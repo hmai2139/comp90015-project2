@@ -201,16 +201,19 @@ class Message implements Comparable<Message>, Serializable {
     private String user;
     private String message;
 
-    // Additional attribute for insert text request.
+    // Attributes for insert text request.
     private String text;
     private String x1;
     private String y1;
     private String colour;
 
-    // Additional attribute for draw shape request.
+    // Attributes for draw shape request.
     private String shape;
     private String x2;
     private String y2;
+
+    private ArrayList<StyledShape> shapes;
+    private ArrayList<StyledText> texts;
 
     private LocalDateTime dateTime;
 
