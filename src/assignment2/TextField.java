@@ -90,33 +90,4 @@ public class TextField extends JTextField
         setSize(getPreferredSize());
     }
 
-    /*public static void main(String[] args) {
-        JPanel panel = new JPanel();
-        panel.setFocusable( true );
-        panel.setLayout( null );
-        panel.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                JPanel panel = (JPanel) e.getSource();
-
-                if (e.getClickCount() == 1) {
-                    panel.requestFocusInWindow();
-                }
-
-                if (e.getClickCount() == 2) {
-                    TextField tf = new TextField();
-                    tf.setLocation(e.getPoint());
-                    panel.add( tf );
-                    tf.requestFocusInWindow();
-                }
-            }
-        });
-
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-        frame.add(new JLabel("Double Click to Add Text"), BorderLayout.NORTH);
-        frame.add(panel);
-        frame.setSize(650, 300);
-        frame.setLocationRelativeTo( null );
-        frame.setVisible(true);
-    }*/
 }

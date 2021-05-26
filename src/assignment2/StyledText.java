@@ -7,8 +7,6 @@
 
 package assignment2;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.awt.*;
 import java.io.Serializable;
 

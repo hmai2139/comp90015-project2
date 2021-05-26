@@ -34,7 +34,7 @@ public class Canvas extends JComponent
     private Color colour = Color.BLACK;
 
     // Default stroke size.
-    private int stroke = 2;
+    private final int STROKE = 2;
 
     // Default insert mode.
     private Mode mode = Mode.LINE;
@@ -141,7 +141,7 @@ public class Canvas extends JComponent
         if (this.grid) { drawGrid(graphics2D); }
 
         // Set stroke size.
-        graphics2D.setStroke(new BasicStroke(stroke));
+        graphics2D.setStroke(new BasicStroke(STROKE));
 
         // Set alpha (transparency) value of shape preview.
         graphics2D.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));

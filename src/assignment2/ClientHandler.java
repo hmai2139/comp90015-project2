@@ -301,8 +301,6 @@ public class ClientHandler extends Thread {
         broadcast(command);
     }
 
-    public DataInputStream dataInputStream() { return this.dataInputStream; }
-
     public DataOutputStream dataOutputStream() { return this.dataOutputStream; }
 
     public ObjectOutputStream objectOutputStream() { return this.objectOutputStream; }

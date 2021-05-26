@@ -218,7 +218,6 @@ public class Client {
                 // A new user joined.
                 else if (reply.getOperation().equals(Response.NEW_JOINED.name())) {
                     users.add(reply.getMessage());
-                    System.out.println(reply.getMessage());
                     gui.getActiveUserList().setListData(users.toArray());
                 }
 
@@ -300,16 +299,6 @@ public class Client {
     }
 
     public String user() { return this.user; }
-
-    public ArrayList<String> getUsers() { return this.users; }
-
-    public DataOutputStream outputStream() { return this.dataOutputStream; }
-
-    public DataInputStream inputStream() { return this.dataInputStream; }
-
-    public ObjectOutputStream objectOutputStream() { return this.objectOutputStream; }
-
-    public ObjectInputStream getObjectInputStream() { return this.objectInputStream; }
 
     // Display error message if error is encountered during start-up.
     public static void showErrorPanel(String message, String error) {

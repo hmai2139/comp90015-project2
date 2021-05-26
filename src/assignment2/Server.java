@@ -7,6 +7,7 @@
 package assignment2;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -17,8 +18,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
@@ -236,9 +235,6 @@ class Message implements Comparable<Message>, Serializable {
     private String shape;
     private String x2;
     private String y2;
-
-    private ArrayList<StyledShape> shapes;
-    private ArrayList<StyledText> texts;
 
     private LocalDateTime dateTime;
 
