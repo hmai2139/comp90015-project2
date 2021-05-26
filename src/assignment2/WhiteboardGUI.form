@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="assignment2.WhiteboardGUI">
-  <grid id="27dc6" binding="panelMain" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="panelMain" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="27" width="735" height="551"/>
@@ -15,7 +15,7 @@
     <children>
       <scrollpane id="41dad" binding="logScrollPanel">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <background color="-1"/>
@@ -31,6 +31,8 @@
             <constraints/>
             <properties>
               <background color="-1"/>
+              <disabledTextColor color="-4665371"/>
+              <doubleBuffered value="false"/>
               <editable value="false"/>
             </properties>
           </component>
@@ -104,7 +106,7 @@
       <grid id="54a9b" binding="userMenuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
           <background color="-1"/>
@@ -265,6 +267,31 @@
           </grid>
         </children>
       </grid>
+      <scrollpane id="7a045" binding="userScrollPanel">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <background color="-1"/>
+          <font name="JetBrains Mono"/>
+          <foreground color="-1"/>
+        </properties>
+        <border type="etched" title="Active users">
+          <font name="JetBrains Mono" style="1"/>
+          <title-color color="-12828863"/>
+        </border>
+        <children>
+          <component id="43d65" class="javax.swing.JTextArea" binding="userActiveArea">
+            <constraints/>
+            <properties>
+              <background color="-1"/>
+              <disabledTextColor color="-4665371"/>
+              <doubleBuffered value="false"/>
+              <editable value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
     </children>
   </grid>
 </form>

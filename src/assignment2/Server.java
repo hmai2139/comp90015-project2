@@ -81,33 +81,17 @@ public class Server {
                 System.out.println(requestJSON);
                 Message request = ClientHandler.parseRequest(requestJSON);
 
-                // Notify incoming client that they have chosen the same name as manager.
+                // Notify incoming client that their username is already taken.
                 if (request != null) {
-                    if (request.getUser().trim().equalsIgnoreCase(MANAGER.trim())) {
+                    String username = request.getUser().trim();
+                    if (username.equalsIgnoreCase(MANAGER.trim()) || userExists(username)) {
                         dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
                         client.close();
                     }
 
+                    // Otherwise ask manager for join permission.
                     else {
-                        // Notify incoming client that they have chosen the same name as as an existing client.
-                        for (Socket socket : clients.keySet()) {
-                            if (clients.get(socket).trim().equalsIgnoreCase(request.getUser().trim())) {
-                                dataOutputStream.writeUTF(Response.USERNAME_TAKEN.name());
-                                client.close();
-                            }
-                        }
-                    }
-
-                    // Notify manager of join request.
-                    int result = showJoinDialog(request.getUser());
-
-                    if (result == JOptionPane.YES_OPTION) {
-                        dataOutputStream.writeUTF(Response.LOGIN_SUCCESS.name());
-                    }
-
-                    else if (result == JOptionPane.NO_OPTION) {
-                        dataOutputStream.writeUTF(Response.JOIN_DECLINED.name());
-                        client.close();
+                        showJoinDialog(request.getUser(), dataOutputStream);
                     }
 
                     // Create Object I/O streams to send/receive Objects to/from client.
@@ -143,8 +127,18 @@ public class Server {
         }
     }
 
+    // Check if username exists.
+    public synchronized static Boolean userExists(String user) {
+        for (Socket socket : clients.keySet()) {
+            if (clients.get(socket).trim().equalsIgnoreCase(user.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Display user login request message.
-    public synchronized static int showJoinDialog(String user) {
+    public synchronized static void showJoinDialog(String user, DataOutputStream out) {
 
         JFrame frame = new JFrame(user + "would like to join your whiteboard.");
         JOptionPane optionPane = new JOptionPane(user + " would like to join your whiteboard.",
@@ -163,6 +157,7 @@ public class Server {
                 joinDialog.setTitle("Please accept or decline.");
             }
         });
+
         optionPane.addPropertyChangeListener(e -> {
             String prop = e.getPropertyName();
             if (joinDialog.isVisible()
@@ -180,7 +175,18 @@ public class Server {
         joinDialog.requestFocus();
         joinDialog.setVisible(true);
 
-        return (Integer) optionPane.getValue();
+        int value = (Integer) optionPane.getValue();
+        try {
+            if (value == JOptionPane.YES_OPTION) {
+                out.writeUTF(Response.LOGIN_SUCCESS.name());
+            }
+            else {
+                out.writeUTF(Response.JOIN_DECLINED.name());
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
 

@@ -208,7 +208,13 @@ public class ClientHandler extends Thread {
         String command = String.format("{\"operation\": \"%s\", \"user\": \"%s\"}",
                 Response.CLEAR.name(), Server.MANAGER);
         broadcast(command);
+    }
 
+    // Broadcast close command to client.
+    public static void closeCommand() {
+        String command = String.format("{\"operation\": \"%s\", \"user\": \"%s\"}",
+                Response.WHITEBOARD_CLOSED.name(), Server.MANAGER);
+        broadcast(command);
     }
 
     public DataInputStream in() { return this.dataInputStream; }

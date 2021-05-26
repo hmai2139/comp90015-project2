@@ -36,6 +36,8 @@ public class WhiteboardGUI {
     private JPanel userMenuPanel;
     private JTextArea logArea;
     private JTextField removeUserField;
+    private JScrollPane userScrollPanel;
+    private JTextArea userActiveArea;
     private JPanel userInteractionPanel;
 
     private Canvas canvas;

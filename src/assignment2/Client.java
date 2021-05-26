@@ -169,6 +169,13 @@ public class Client {
                 else if (reply.getOperation().equals(Response.CLEAR.name())) {
                     gui.canvas().clear();
                 }
+
+                // Server sent a close canvas command.
+                else if (reply.getOperation().equals(Response.WHITEBOARD_CLOSED.name())) {
+                    showErrorPanel("Manager has closed the whiteboard.", "Whiteboard closed.");
+                    System.out.println("Exiting...");
+                    System.exit(0);
+                }
             }
         }
     }
@@ -182,7 +189,7 @@ public class Client {
             return dataInputStream.readUTF();
         }
         catch (Exception e) {
-            return e.getMessage();
+            return "Connection error. Cannot login.";
         }
     }
 
